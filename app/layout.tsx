@@ -1,5 +1,6 @@
+// app/layout.tsx - VERSIÓN CORREGIDA
 import type { Metadata } from 'next'
-import './globals.css'
+import './styles.css'  // ← CAMBIADO: globals.css por styles.css
 
 export const metadata: Metadata = {
   title: 'Pavos Fran',
