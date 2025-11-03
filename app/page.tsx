@@ -125,11 +125,16 @@ const defaultExchangeRates = {
   UYU: 39
 };
 
+interface ProductPrice {
+  label: string;
+  priceUSD: number;
+}
+
 interface Product {
   id: number;
   name: string;
   image: string;
-  prices: { label: string; price: number }[];
+  prices: ProductPrice[];
 }
 
 interface Comment {
@@ -157,106 +162,122 @@ const HomePage: React.FC = () => {
 
   const t = translations[currentLanguage as keyof typeof translations];
 
-  // Datos de productos
-  const productsData: { [key: number]: Product[] } = {
+  // Datos base de productos (sin traducciones)
+  const baseProductsData: { [key: number]: Omit<Product, 'name'>[] } = {
     1: [
       {
         id: 1,
-        name: t.fortniteCrew,
         image: "/img/products/fortnite-crew-1920x1080-26707a60b0b6.jpg",
         prices: [
-          { label: "3 Months", price: 15 },
-          { label: "4 Months", price: 18 },
-          { label: "5 Months", price: 20 },
-          { label: "6 Months", price: 23 }
+          { label: "3 Months", priceUSD: 15 },
+          { label: "4 Months", priceUSD: 18 },
+          { label: "5 Months", priceUSD: 20 },
+          { label: "6 Months", priceUSD: 23 }
         ]
       }
     ],
     2: [
       {
         id: 2,
-        name: t.cosmeticsGift,
         image: "/img/products/Fortnite_blog_gifting-coming-to-battle-royale_BR06_News_Featured_Gifting-1920x1080-57a0e0e15467c65cac208679c6b5b558a8e6b626.jpg",
         prices: [
-          { label: "From 100 V-Bucks", price: 0.70 }
+          { label: "From 100 V-Bucks", priceUSD: 0.70 }
         ]
       }
     ],
     3: [
       {
         id: 3,
-        name: t.gamePass,
         image: "/img/products/9b4542b3-5163-4d00-8e41-6d3a5bcf3073.jpg",
         prices: [
-          { label: "Price", price: 16.50 }
+          { label: "Price", priceUSD: 16.50 }
         ]
       }
     ],
     4: [
       {
         id: 4,
-        name: "Simple Pack",
         image: "/img/products/simple-pack.jpg",
         prices: [
-          { label: "Price", price: 22 }
+          { label: "Price", priceUSD: 22 }
         ]
       },
       {
         id: 5,
-        name: "Exclusive Pack",
         image: "/img/products/exclusive-pack.jpg",
         prices: [
-          { label: "Price", price: 22 }
+          { label: "Price", priceUSD: 22 }
         ]
       },
       {
         id: 6,
-        name: "Pro Pack",
         image: "/img/products/pro-pack.jpg",
         prices: [
-          { label: "Price", price: 33 }
+          { label: "Price", priceUSD: 33 }
         ]
       },
       {
         id: 7,
-        name: "Super Pack",
         image: "/img/products/super-pack.jpg",
         prices: [
-          { label: "Price", price: 50 }
+          { label: "Price", priceUSD: 50 }
         ]
       },
       {
         id: 8,
-        name: "Mega Pack",
         image: "/img/products/mega-pack.jpg",
         prices: [
-          { label: "Price", price: 80 }
+          { label: "Price", priceUSD: 80 }
         ]
       }
     ],
     5: [
       {
         id: 9,
-        name: t.vbucks,
         image: "/img/products/fortnite-vbucks-1200x1200-1200x1200-8050abc986bf.png",
         prices: [
-          { label: "3100V", price: 12 },
-          { label: "5000V", price: 27 },
-          { label: "13500V", price: 60 }
+          { label: "3100V", priceUSD: 12 },
+          { label: "5000V", priceUSD: 27 },
+          { label: "13500V", priceUSD: 60 }
         ]
       }
     ],
     6: [
       {
         id: 10,
-        name: t.discounts,
         image: "/img/products/discounts.jpg",
         prices: [
-          { label: "Contact for bulk deals", price: 0 }
+          { label: "Contact for bulk deals", priceUSD: 0 }
         ]
       }
     ]
   };
+
+  // Función para obtener productos con nombres traducidos
+  const getProductsData = () => {
+    const productNames: { [key: number]: string[] } = {
+      1: [t.fortniteCrew],
+      2: [t.cosmeticsGift],
+      3: [t.gamePass],
+      4: ["Simple Pack", "Exclusive Pack", "Pro Pack", "Super Pack", "Mega Pack"],
+      5: [t.vbucks],
+      6: [t.discounts]
+    };
+
+    const result: { [key: number]: Product[] } = {};
+    
+    Object.keys(baseProductsData).forEach(pageKey => {
+      const pageNum = parseInt(pageKey);
+      result[pageNum] = baseProductsData[pageNum].map((product, index) => ({
+        ...product,
+        name: productNames[pageNum][index] || `Product ${product.id}`
+      }));
+    });
+
+    return result;
+  };
+
+  const productsData = getProductsData();
 
   // Datos del carrusel
   const carouselImages = [
@@ -299,7 +320,6 @@ const HomePage: React.FC = () => {
     setApiStatus('loading');
     
     try {
-      // Intentar con API más confiable
       const response = await fetch('https://api.exchangerate.host/latest?base=USD');
       const data = await response.json();
       
@@ -323,7 +343,6 @@ const HomePage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching exchange rates:', error);
-      // Usar tasas predeterminadas
       setExchangeRates(defaultExchangeRates);
       setApiStatus('error');
       setLastUpdate(new Date().toLocaleDateString() + ' (Default)');
@@ -357,7 +376,6 @@ const HomePage: React.FC = () => {
 
     const symbol = currencySymbols[currency] || '$';
     
-    // Formatear según la moneda
     if (['ARS', 'CLP', 'COP'].includes(currency)) {
       return `${symbol}${Math.round(convertedPrice).toLocaleString()}`;
     } else {
@@ -378,10 +396,8 @@ const HomePage: React.FC = () => {
       setVisitCount(1);
     }
 
-    // Cargar tasas de cambio
     fetchExchangeRates();
 
-    // Carrusel automático
     const carouselInterval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
     }, 3000);
@@ -396,6 +412,11 @@ const HomePage: React.FC = () => {
       setCurrentLanguage(preferredLanguage);
     }
   }, []);
+
+  // Actualizar productos cuando cambia el idioma
+  useEffect(() => {
+    // Los productos se regeneran automáticamente cuando cambia el idioma
+  }, [currentLanguage]);
 
   // Funciones
   const showSection = (sectionId: string) => {
@@ -673,7 +694,7 @@ const HomePage: React.FC = () => {
                     <div className="multi-price">
                       {product.prices.map((price, index) => (
                         <p key={index} className="price">
-                          {price.label}: {formatPrice(price.price)}
+                          {price.label}: {formatPrice(price.priceUSD)}
                         </p>
                       ))}
                     </div>
