@@ -4,26 +4,21 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
 
-// Textos traducidos para todos los idiomas
+// Textos traducidos
 const translations = {
   en: {
-    // Navegación
     home: "Home",
     products: "Products",
     payments: "Payments",
     contact: "Contact",
-    
-    // Home Section
     welcome: "Welcome to Fran V-Bucks",
-    welcomeText: "We offer the best service so you can get everything you want from the Fortnite Item Shop. V-Bucks, Skins, Cosmetics, Battle Pass, Promotional Packs, and discounts on bulk purchases. Follow us on social media and ask us anything. Battle Royale!",
+    welcomeText: "We offer the best service so you can get everything you want from the Fortnite Item Shop.",
     userReviews: "User Reviews",
     seeReviews: "See what our customers say. Leave your review below!",
     yourName: "Your name",
     shareExperience: "Share your experience...",
     rating: "Rating",
     submitReview: "Submit Review",
-    
-    // Products Section
     browseProducts: "🎮 Browse All Products 🎮",
     selectCategory: "Select a Category",
     close: "Close",
@@ -40,8 +35,6 @@ const translations = {
     discounts: "Discounts",
     bulkDeals: "Bulk Deals",
     contactWhatsApp: "Contact WhatsApp",
-    
-    // Payments Section
     paymentMethods: "Payment Methods",
     creditCard: "Credit Card",
     debitCard: "Debit Card",
@@ -51,38 +44,33 @@ const translations = {
     yape: "Yape",
     pagoMovil: "Pago Móvil",
     cashApp: "Cash App",
-    
-    // Contact Section
     contactUs: "Contact Us",
     email: "📧 Email",
     phone: "📞 Phone",
     address: "📍 Address",
     followUs: "Follow Us",
-    
-    // General
     selectCurrency: "Select Currency:",
     visits: "Visits",
-    whatsappMessage: "💬 Hi dude! Need help?",
-    allRightsReserved: "All rights reserved."
+    whatsappMessage: "💬 Hi! Need help?",
+    allRightsReserved: "All rights reserved.",
+    exchangeRate: "Exchange Rate",
+    loadingRates: "Loading exchange rates...",
+    rateUpdate: "Last update",
+    apiError: "Using default rates"
   },
   es: {
-    // Navegación
     home: "Inicio",
     products: "Productos",
     payments: "Pagos",
     contact: "Contacto",
-    
-    // Home Section
     welcome: "Bienvenido a Fran V-Bucks",
-    welcomeText: "Ofrecemos el mejor servicio para que puedas obtener todo lo que quieras de la Tienda de Fortnite. V-Bucks, Skins, Cosméticos, Pase de Batalla, Paquetes Promocionales y descuentos en compras al por mayor. Síguenos en redes sociales y pregúntanos lo que quieras. ¡Battle Royale!",
+    welcomeText: "Ofrecemos el mejor servicio para que puedas obtener todo lo que quieras de la Tienda de Fortnite.",
     userReviews: "Opiniones de Usuarios",
     seeReviews: "Mira lo que dicen nuestros clientes. ¡Deja tu reseña abajo!",
     yourName: "Tu nombre",
     shareExperience: "Comparte tu experiencia...",
     rating: "Calificación",
     submitReview: "Enviar Reseña",
-    
-    // Products Section
     browseProducts: "🎮 Explorar Todos los Productos 🎮",
     selectCategory: "Seleccionar Categoría",
     close: "Cerrar",
@@ -99,8 +87,6 @@ const translations = {
     discounts: "Descuentos",
     bulkDeals: "Ofertas al por Mayor",
     contactWhatsApp: "Contactar por WhatsApp",
-    
-    // Payments Section
     paymentMethods: "Métodos de Pago",
     creditCard: "Tarjeta de Crédito",
     debitCard: "Tarjeta de Débito",
@@ -110,257 +96,49 @@ const translations = {
     yape: "Yape",
     pagoMovil: "Pago Móvil",
     cashApp: "Cash App",
-    
-    // Contact Section
     contactUs: "Contáctanos",
     email: "📧 Correo",
     phone: "📞 Teléfono",
     address: "📍 Dirección",
     followUs: "Síguenos",
-    
-    // General
     selectCurrency: "Seleccionar Moneda:",
     visits: "Visitas",
     whatsappMessage: "💬 ¡Hola! ¿Necesitas ayuda?",
-    allRightsReserved: "Todos los derechos reservados."
-  },
-  fr: {
-    // Navegación
-    home: "Accueil",
-    products: "Produits",
-    payments: "Paiements",
-    contact: "Contact",
-    
-    // Home Section
-    welcome: "Bienvenue chez Fran V-Bucks",
-    welcomeText: "Nous offrons le meilleur service pour que vous puissiez obtenir tout ce que vous voulez de la boutique Fortnite. V-Bucks, Skins, Cosmétiques, Passe de Combat, Packs Promotionnels et remises sur les achats en gros. Suivez-nous sur les réseaux sociaux et demandez-nous n'importe quoi. Battle Royale!",
-    userReviews: "Avis des Utilisateurs",
-    seeReviews: "Voir ce que disent nos clients. Laissez votre avis ci-dessous!",
-    yourName: "Votre nom",
-    shareExperience: "Partagez votre expérience...",
-    rating: "Note",
-    submitReview: "Soumettre l'Avis",
-    
-    // Products Section
-    browseProducts: "🎮 Parcourir Tous les Produits 🎮",
-    selectCategory: "Sélectionner une Catégorie",
-    close: "Fermer",
-    fortniteCrew: "Fortnite Crew",
-    monthlySubs: "Abonnements Mensuels",
-    cosmeticsGift: "Cadeau Cosmétique",
-    skinsItems: "Skins et Articles",
-    gamePass: "Game Pass",
-    xboxSub: "Abonnement Xbox",
-    exclusivePacks: "Packs Exclusifs",
-    specialBundles: "Lots Spéciaux",
-    vbucks: "V-Bucks",
-    gameCurrency: "Monnaie du Jeu",
-    discounts: "Remises",
-    bulkDeals: "Offres en Gros",
-    contactWhatsApp: "Contacter WhatsApp",
-    
-    // Payments Section
-    paymentMethods: "Méthodes de Paiement",
-    creditCard: "Carte de Crédit",
-    debitCard: "Carte de Débit",
-    mercadoPago: "Mercado Pago",
-    daviPlata: "DaviPlata",
-    nequi: "Nequi",
-    yape: "Yape",
-    pagoMovil: "Pago Móvil",
-    cashApp: "Cash App",
-    
-    // Contact Section
-    contactUs: "Contactez-Nous",
-    email: "📧 E-mail",
-    phone: "📞 Téléphone",
-    address: "📍 Adresse",
-    followUs: "Suivez-Nous",
-    
-    // General
-    selectCurrency: "Sélectionner la Devise:",
-    visits: "Visites",
-    whatsappMessage: "💬 Salut! Besoin d'aide?",
-    allRightsReserved: "Tous droits réservés."
-  },
-  de: {
-    // Navegación
-    home: "Startseite",
-    products: "Produkte",
-    payments: "Zahlungen",
-    contact: "Kontakt",
-    
-    // Home Section
-    welcome: "Willkommen bei Fran V-Bucks",
-    welcomeText: "Wir bieten den besten Service, damit Sie alles bekommen, was Sie aus dem Fortnite Item Shop wollen. V-Bucks, Skins, Kosmetik, Battle Pass, Werbepakete und Rabatte auf Mengenkäufe. Folgen Sie uns in den sozialen Medien und fragen Sie uns alles. Battle Royale!",
-    userReviews: "Benutzerbewertungen",
-    seeReviews: "Sehen Sie, was unsere Kunden sagen. Hinterlassen Sie unten Ihre Bewertung!",
-    yourName: "Ihr Name",
-    shareExperience: "Teilen Sie Ihre Erfahrung...",
-    rating: "Bewertung",
-    submitReview: "Bewertung Abschicken",
-    
-    // Products Section
-    browseProducts: "🎮 Alle Produkte Durchsuchen 🎮",
-    selectCategory: "Kategorie Auswählen",
-    close: "Schließen",
-    fortniteCrew: "Fortnite Crew",
-    monthlySubs: "Monatliche Abos",
-    cosmeticsGift: "Kosmetik Geschenk",
-    skinsItems: "Skins & Artikel",
-    gamePass: "Game Pass",
-    xboxSub: "Xbox Abo",
-    exclusivePacks: "Exklusive Pakete",
-    specialBundles: "Spezielle Bundles",
-    vbucks: "V-Bucks",
-    gameCurrency: "Spielwährung",
-    discounts: "Rabatte",
-    bulkDeals: "Mengenangebote",
-    contactWhatsApp: "WhatsApp Kontaktieren",
-    
-    // Payments Section
-    paymentMethods: "Zahlungsmethoden",
-    creditCard: "Kreditkarte",
-    debitCard: "Debitkarte",
-    mercadoPago: "Mercado Pago",
-    daviPlata: "DaviPlata",
-    nequi: "Nequi",
-    yape: "Yape",
-    pagoMovil: "Pago Móvil",
-    cashApp: "Cash App",
-    
-    // Contact Section
-    contactUs: "Kontaktieren Sie Uns",
-    email: "📧 E-Mail",
-    phone: "📞 Telefon",
-    address: "📍 Adresse",
-    followUs: "Folgen Sie Uns",
-    
-    // General
-    selectCurrency: "Währung Auswählen:",
-    visits: "Besuche",
-    whatsappMessage: "💬 Hallo! Brauchen Sie Hilfe?",
-    allRightsReserved: "Alle Rechte vorbehalten."
-  },
-  it: {
-    // Navegación
-    home: "Home",
-    products: "Prodotti",
-    payments: "Pagamenti",
-    contact: "Contatto",
-    
-    // Home Section
-    welcome: "Benvenuto in Fran V-Bucks",
-    welcomeText: "Offriamo il miglior servizio per ottenere tutto ciò che desideri dal Negozio di Fortnite. V-Bucks, Skin, Cosmetici, Battle Pass, Pacchetti Promozionali e sconti sugli acquisti all'ingrosso. Seguici sui social media e chiedici qualsiasi cosa. Battle Royale!",
-    userReviews: "Recensioni degli Utenti",
-    seeReviews: "Guarda cosa dicono i nostri clienti. Lascia la tua recensione qui sotto!",
-    yourName: "Il tuo nome",
-    shareExperience: "Condividi la tua esperienza...",
-    rating: "Valutazione",
-    submitReview: "Invia Recensione",
-    
-    // Products Section
-    browseProducts: "🎮 Sfoglia Tutti i Prodotti 🎮",
-    selectCategory: "Seleziona una Categoria",
-    close: "Chiudi",
-    fortniteCrew: "Fortnite Crew",
-    monthlySubs: "Abbonamenti Mensili",
-    cosmeticsGift: "Regalo Cosmetici",
-    skinsItems: "Skin e Articoli",
-    gamePass: "Game Pass",
-    xboxSub: "Abbonamento Xbox",
-    exclusivePacks: "Pacchetti Esclusivi",
-    specialBundles: "Bundle Speciali",
-    vbucks: "V-Bucks",
-    gameCurrency: "Valuta di Gioco",
-    discounts: "Sconti",
-    bulkDeals: "Offte all'Ingrosso",
-    contactWhatsApp: "Contatta WhatsApp",
-    
-    // Payments Section
-    paymentMethods: "Metodi di Pagamento",
-    creditCard: "Carta di Credito",
-    debitCard: "Carta di Debito",
-    mercadoPago: "Mercado Pago",
-    daviPlata: "DaviPlata",
-    nequi: "Nequi",
-    yape: "Yape",
-    pagoMovil: "Pago Móvil",
-    cashApp: "Cash App",
-    
-    // Contact Section
-    contactUs: "Contattaci",
-    email: "📧 Email",
-    phone: "📞 Telefono",
-    address: "📍 Indirizzo",
-    followUs: "Seguici",
-    
-    // General
-    selectCurrency: "Seleziona Valuta:",
-    visits: "Visite",
-    whatsappMessage: "💬 Ciao! Hai bisogno di aiuto?",
-    allRightsReserved: "Tutti i diritti riservati."
-  },
-  pt: {
-    // Navegación
-    home: "Início",
-    products: "Produtos",
-    payments: "Pagamentos",
-    contact: "Contato",
-    
-    // Home Section
-    welcome: "Bem-vindo à Fran V-Bucks",
-    welcomeText: "Oferecemos o melhor serviço para que você possa obter tudo o que quiser da Loja de Itens do Fortnite. V-Bucks, Skins, Cosméticos, Passe de Batalha, Pacotes Promocionais e descontos em compras em quantidade. Siga-nos nas redes sociais e pergunte-nos qualquer coisa. Battle Royale!",
-    userReviews: "Avaliações de Usuários",
-    seeReviews: "Veja o que nossos clientes dizem. Deixe sua avaliação abaixo!",
-    yourName: "Seu nome",
-    shareExperience: "Compartilhe sua experiência...",
-    rating: "Avaliação",
-    submitReview: "Enviar Avaliação",
-    
-    // Products Section
-    browseProducts: "🎮 Navegar Todos os Produtos 🎮",
-    selectCategory: "Selecionar Categoria",
-    close: "Fechar",
-    fortniteCrew: "Fortnite Crew",
-    monthlySubs: "Assinaturas Mensais",
-    cosmeticsGift: "Presente de Cosméticos",
-    skinsItems: "Skins e Itens",
-    gamePass: "Game Pass",
-    xboxSub: "Assinatura Xbox",
-    exclusivePacks: "Pacotes Exclusivos",
-    specialBundles: "Pacotes Especiais",
-    vbucks: "V-Bucks",
-    gameCurrency: "Moeda do Jogo",
-    discounts: "Descontos",
-    bulkDeals: "Ofertas em Quantidade",
-    contactWhatsApp: "Contatar WhatsApp",
-    
-    // Payments Section
-    paymentMethods: "Métodos de Pagamento",
-    creditCard: "Cartão de Crédito",
-    debitCard: "Cartão de Débito",
-    mercadoPago: "Mercado Pago",
-    daviPlata: "DaviPlata",
-    nequi: "Nequi",
-    yape: "Yape",
-    pagoMovil: "Pago Móvil",
-    cashApp: "Cash App",
-    
-    // Contact Section
-    contactUs: "Contate-Nos",
-    email: "📧 E-mail",
-    phone: "📞 Telefone",
-    address: "📍 Endereço",
-    followUs: "Siga-Nos",
-    
-    // General
-    selectCurrency: "Selecionar Moeda:",
-    visits: "Visitas",
-    whatsappMessage: "💬 Oi! Precisa de ajuda?",
-    allRightsReserved: "Todos os direitos reservados."
+    allRightsReserved: "Todos los derechos reservados.",
+    exchangeRate: "Tipo de Cambio",
+    loadingRates: "Cargando tasas de cambio...",
+    rateUpdate: "Última actualización",
+    apiError: "Usando tasas predeterminadas"
   }
 };
+
+// Tasas de cambio predeterminadas
+const defaultExchangeRates = {
+  USD: 1,
+  EUR: 0.92,
+  MXN: 16.80,
+  ARS: 850,
+  BRL: 5.05,
+  CLP: 920,
+  COP: 3900,
+  PEN: 3.75,
+  UYU: 39
+};
+
+interface Product {
+  id: number;
+  name: string;
+  image: string;
+  prices: { label: string; price: number }[];
+}
+
+interface Comment {
+  id: number;
+  name: string;
+  comment: string;
+  date: string;
+  rating: number;
+}
 
 const HomePage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('home');
@@ -372,11 +150,15 @@ const HomePage: React.FC = () => {
   const [currency, setCurrency] = useState('USD');
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [exchangeRates, setExchangeRates] = useState(defaultExchangeRates);
+  const [rateLoading, setRateLoading] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState('');
+  const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
 
   const t = translations[currentLanguage as keyof typeof translations];
 
-  // Datos de ejemplo para productos
-  const productsData = {
+  // Datos de productos
+  const productsData: { [key: number]: Product[] } = {
     1: [
       {
         id: 1,
@@ -484,8 +266,8 @@ const HomePage: React.FC = () => {
     "/img/carrousel/2020-11-02-image-23.webp"
   ];
 
-  // Datos de comentarios iniciales
-  const initialComments = [
+  // Comentarios iniciales
+  const initialComments: Comment[] = [
     {
       id: 1,
       name: "Carlos M.",
@@ -509,7 +291,79 @@ const HomePage: React.FC = () => {
     }
   ];
 
-  const [comments, setComments] = useState(initialComments);
+  const [comments, setComments] = useState<Comment[]>(initialComments);
+
+  // Función simplificada para obtener tasas de cambio
+  const fetchExchangeRates = async () => {
+    setRateLoading(true);
+    setApiStatus('loading');
+    
+    try {
+      // Intentar con API más confiable
+      const response = await fetch('https://api.exchangerate.host/latest?base=USD');
+      const data = await response.json();
+      
+      if (data && data.rates) {
+        const updatedRates = {
+          USD: 1,
+          EUR: data.rates.EUR || defaultExchangeRates.EUR,
+          MXN: data.rates.MXN || defaultExchangeRates.MXN,
+          ARS: data.rates.ARS || defaultExchangeRates.ARS,
+          BRL: data.rates.BRL || defaultExchangeRates.BRL,
+          CLP: data.rates.CLP || defaultExchangeRates.CLP,
+          COP: data.rates.COP || defaultExchangeRates.COP,
+          PEN: data.rates.PEN || defaultExchangeRates.PEN,
+          UYU: data.rates.UYU || defaultExchangeRates.UYU,
+        };
+        setExchangeRates(updatedRates);
+        setApiStatus('success');
+        setLastUpdate(new Date().toLocaleTimeString());
+      } else {
+        throw new Error('Invalid API response');
+      }
+    } catch (error) {
+      console.error('Error fetching exchange rates:', error);
+      // Usar tasas predeterminadas
+      setExchangeRates(defaultExchangeRates);
+      setApiStatus('error');
+      setLastUpdate(new Date().toLocaleDateString() + ' (Default)');
+    } finally {
+      setRateLoading(false);
+    }
+  };
+
+  // Función para convertir precios
+  const convertPrice = (priceUSD: number): number => {
+    const rate = exchangeRates[currency as keyof typeof exchangeRates] || 1;
+    return parseFloat((priceUSD * rate).toFixed(2));
+  };
+
+  // Función para formatear precio
+  const formatPrice = (priceUSD: number): string => {
+    if (priceUSD === 0) return t.contactWhatsApp;
+    
+    const convertedPrice = convertPrice(priceUSD);
+    const currencySymbols: { [key: string]: string } = {
+      USD: '$',
+      EUR: '€',
+      MXN: '$',
+      ARS: '$',
+      BRL: 'R$',
+      CLP: '$',
+      COP: '$',
+      PEN: 'S/',
+      UYU: '$'
+    };
+
+    const symbol = currencySymbols[currency] || '$';
+    
+    // Formatear según la moneda
+    if (['ARS', 'CLP', 'COP'].includes(currency)) {
+      return `${symbol}${Math.round(convertedPrice).toLocaleString()}`;
+    } else {
+      return `${symbol}${convertedPrice.toFixed(2)}`;
+    }
+  };
 
   // Efectos
   useEffect(() => {
@@ -524,15 +378,18 @@ const HomePage: React.FC = () => {
       setVisitCount(1);
     }
 
+    // Cargar tasas de cambio
+    fetchExchangeRates();
+
     // Carrusel automático
-    const interval = setInterval(() => {
+    const carouselInterval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
     }, 3000);
 
-    return () => clearInterval(interval);
+    return () => clearInterval(carouselInterval);
   }, []);
 
-  // Cargar idioma preferido al iniciar
+  // Cargar idioma preferido
   useEffect(() => {
     const preferredLanguage = localStorage.getItem('preferredLanguage');
     if (preferredLanguage && translations[preferredLanguage as keyof typeof translations]) {
@@ -593,7 +450,7 @@ const HomePage: React.FC = () => {
       return;
     }
 
-    const newComment = {
+    const newComment: Comment = {
       id: comments.length + 1,
       name,
       comment,
@@ -632,10 +489,6 @@ const HomePage: React.FC = () => {
         <div className={`language-dropdown ${languageDropdown ? 'active' : ''}`}>
           <button className="language-option" onClick={() => changeLanguage('en')}>English</button>
           <button className="language-option" onClick={() => changeLanguage('es')}>Español</button>
-          <button className="language-option" onClick={() => changeLanguage('fr')}>Français</button>
-          <button className="language-option" onClick={() => changeLanguage('de')}>Deutsch</button>
-          <button className="language-option" onClick={() => changeLanguage('it')}>Italiano</button>
-          <button className="language-option" onClick={() => changeLanguage('pt')}>Português</button>
         </div>
       </div>
 
@@ -658,24 +511,45 @@ const HomePage: React.FC = () => {
         <a onClick={() => showSection('contact')}>{t.contact}</a>
       </nav>
 
-      {/* Selector de moneda */}
-      <div className="currency-selector">
-        <label htmlFor="currency">{t.selectCurrency}</label>
-        <select 
-          id="currency" 
-          value={currency} 
-          onChange={(e) => setCurrency(e.target.value)}
-        >
-          <option value="USD">USD - US Dollar</option>
-          <option value="EUR">EUR - Euro</option>
-          <option value="MXN">MXN - Mexican Peso</option>
-          <option value="ARS">ARS - Argentine Peso</option>
-          <option value="BRL">BRL - Brazilian Real</option>
-          <option value="CLP">CLP - Chilean Peso</option>
-          <option value="COP">COP - Colombian Peso</option>
-          <option value="PEN">PEN - Peruvian Sol</option>
-          <option value="UYU">UYU - Uruguayan Peso</option>
-        </select>
+      {/* Selector de moneda y información de tasas */}
+      <div className="currency-section">
+        <div className="currency-selector">
+          <label htmlFor="currency">{t.selectCurrency}</label>
+          <select 
+            id="currency" 
+            value={currency} 
+            onChange={(e) => setCurrency(e.target.value)}
+          >
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="MXN">MXN - Mexican Peso</option>
+            <option value="ARS">ARS - Argentine Peso</option>
+            <option value="BRL">BRL - Brazilian Real</option>
+            <option value="CLP">CLP - Chilean Peso</option>
+            <option value="COP">COP - Colombian Peso</option>
+            <option value="PEN">PEN - Peruvian Sol</option>
+            <option value="UYU">UYU - Uruguayan Peso</option>
+          </select>
+        </div>
+
+        <div className="exchange-info">
+          <div className="exchange-rate">
+            <strong>{t.exchangeRate}:</strong> 
+            {rateLoading ? (
+              <span className="loading">{t.loadingRates}</span>
+            ) : (
+              <span className={`rate ${apiStatus}`}>
+                1 USD = {formatPrice(1)} {currency}
+                {apiStatus === 'error' && <span className="api-warning"> ({t.apiError})</span>}
+              </span>
+            )}
+          </div>
+          {lastUpdate && (
+            <div className="last-update">
+              <small>{t.rateUpdate}: {lastUpdate}</small>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sección Home */}
@@ -787,9 +661,9 @@ const HomePage: React.FC = () => {
           </div>
 
           {/* Páginas de productos */}
-          {activeProductPage && productsData[activeProductPage as keyof typeof productsData] && (
+          {activeProductPage && productsData[activeProductPage] && (
             <div className="products-grid">
-              {productsData[activeProductPage as keyof typeof productsData].map((product) => (
+              {productsData[activeProductPage].map((product) => (
                 <div key={product.id} className="product">
                   <div className="product-image-container">
                     <img src={product.image} alt={product.name} />
@@ -798,8 +672,8 @@ const HomePage: React.FC = () => {
                     <h3>{product.name}</h3>
                     <div className="multi-price">
                       {product.prices.map((price, index) => (
-                        <p key={index} className="price" data-price={price.price}>
-                          {price.label}: ${price.price}
+                        <p key={index} className="price">
+                          {price.label}: {formatPrice(price.price)}
                         </p>
                       ))}
                     </div>

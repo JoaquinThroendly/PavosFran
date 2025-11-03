@@ -151,6 +151,133 @@ h1, h2, h3 {
     text-shadow: 0 0 10px #00ccff;
 }
 
+/* Sección de moneda y tasas de cambio */
+.currency-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #0066cc, #004499);
+    color: white;
+    margin: 10px auto;
+    border-radius: 10px;
+    max-width: 1200px;
+    flex-wrap: wrap;
+    gap: 15px;
+    box-shadow: 0 0 20px rgba(0, 204, 255, 0.7);
+    border: 1px solid #00ccff;
+    position: relative;
+    overflow: hidden;
+}
+
+.currency-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00ffff, transparent);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.currency-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 250px;
+}
+
+.currency-selector label {
+    font-weight: bold;
+    white-space: nowrap;
+    text-shadow: 0 0 5px #00ccff;
+    font-size: clamp(0.8em, 2.5vw, 0.9em);
+}
+
+.currency-selector select {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #222, #333);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    min-width: 200px;
+    border: 1px solid #00ccff;
+    box-shadow: 0 0 10px rgba(0, 204, 255, 0.5);
+    font-family: 'Orbitron', sans-serif;
+    transition: all 0.3s;
+}
+
+.currency-selector select:hover {
+    box-shadow: 0 0 15px #00ccff;
+    background: linear-gradient(135deg, #333, #444);
+}
+
+.currency-selector select:focus {
+    outline: none;
+    box-shadow: 0 0 20px #00ccff;
+}
+
+.exchange-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.exchange-rate {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: clamp(0.75em, 2.2vw, 0.85em);
+    text-shadow: 0 0 3px #00ccff;
+}
+
+.exchange-rate strong {
+    color: #00ff00;
+}
+
+.loading {
+    font-style: italic;
+    opacity: 0.8;
+    color: #ffff00;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.rate.success {
+    color: #90EE90;
+    font-weight: bold;
+    text-shadow: 0 0 5px #00ff00;
+}
+
+.rate.error {
+    color: #FFB6C1;
+    text-shadow: 0 0 5px #ff4444;
+}
+
+.api-warning {
+    font-size: 0.75em;
+    opacity: 0.8;
+    font-style: italic;
+    color: #ffa500;
+}
+
+.last-update {
+    opacity: 0.8;
+    font-size: 0.7em;
+    text-shadow: 0 0 2px #00ccff;
+}
+
 /* Secciones */
 .section {
     padding: 1.5em 1em;
@@ -384,20 +511,19 @@ h1, h2, h3 {
     overflow-wrap: break-word;
 }
 
-.currency-selector {
-    margin: 1.5em 0;
-    text-align: center;
+/* Mejoras para los precios en productos */
+.multi-price .price {
+    font-weight: bold;
+    color: #4CAF50;
+    margin: 5px 0;
+    font-size: clamp(0.6em, 2.2vw, 0.75em);
+    text-shadow: 0 0 8px #00ff00;
 }
 
-.currency-selector select {
-    padding: 0.4em;
-    background: linear-gradient(135deg, #444, #504f4f);
-    color: #000000;
-    border: 1px solid #00ccff;
-    border-radius: 4px;
-    box-shadow: 0 0 5px #00ccff;
-    font-size: clamp(0.8em, 2.5vw, 0.9em);
-    width: 200px;
+.product-content h3 {
+    color: #fff;
+    margin-bottom: 10px;
+    text-shadow: 0 0 5px #00ccff;
 }
 
 .btn {
@@ -537,6 +663,7 @@ h1, h2, h3 {
 
 .star.selected {
     color: #ffd700;
+    text-shadow: 0 0 10px #ffd700;
 }
 
 /* Redes sociales */
@@ -635,38 +762,72 @@ h1, h2, h3 {
     .nav {
         flex-direction: column;
     }
+    
     .products-grid {
         grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
         gap: 0.8em;
     }
+    
     .product {
         max-width: 140px;
         min-height: 240px;
         padding: 0.6em;
     }
+    
     .categories-grid {
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     }
+    
     .category-card img {
         width: 60px;
         height: 60px;
     }
+    
     .language-selector {
         top: 10px;
         right: 10px;
     }
+    
     .language-toggle {
         width: 40px;
         height: 40px;
         font-size: 1.2em;
     }
+    
     .whatsapp-btn {
         font-size: 0.8em;
         padding: 10px 16px;
     }
+    
     .payment-method img {
         width: 40px;
         height: 40px;
+    }
+    
+    /* Responsive para la sección de moneda */
+    .currency-section {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        padding: 10px 15px;
+    }
+    
+    .exchange-info {
+        align-items: center;
+        text-align: center;
+    }
+    
+    .currency-selector {
+        justify-content: center;
+        min-width: auto;
+    }
+    
+    .currency-selector select {
+        min-width: 150px;
+    }
+    
+    .exchange-rate {
+        justify-content: center;
     }
 }
 
@@ -675,23 +836,48 @@ h1, h2, h3 {
         padding: 1em 0.5em;
         margin: 1em auto;
     }
+    
     .products-grid, .comments-grid {
         grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     }
+    
     .product {
         max-width: 120px;
         min-height: 220px;
         padding: 0.5em;
     }
+    
     .categories-grid {
         grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
     }
+    
     .whatsapp-btn {
         font-size: 0.7em;
         padding: 8px 12px;
     }
+    
     .payment-method {
         padding: 0.8em;
+    }
+    
+    /* Ajustes adicionales para móviles pequeños */
+    .currency-section {
+        gap: 10px;
+        padding: 8px 12px;
+    }
+    
+    .currency-selector {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .currency-selector select {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .exchange-info {
+        gap: 4px;
     }
 }
 
@@ -699,14 +885,47 @@ h1, h2, h3 {
     .products-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    
     .product {
         max-width: 100%;
     }
+    
     .whatsapp-btn span {
         display: none;
     }
+    
     .whatsapp-btn {
         padding: 12px;
         border-radius: 50%;
     }
+    
+    /* Ajustes para pantallas muy pequeñas */
+    .currency-section {
+        margin: 5px auto;
+    }
+    
+    .exchange-rate {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
+
+/* Estados de carga mejorados */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Efectos de brillo para elementos interactivos */
+.currency-selector select:focus,
+.comment-form input:focus,
+.comment-form textarea:focus {
+    outline: none;
+    box-shadow: 0 0 15px #00ccff, 0 0 25px #00ccff;
+    border-color: #00ffff;
 }
