@@ -159,6 +159,7 @@ const HomePage: React.FC = () => {
   const [rateLoading, setRateLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('');
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [forceUpdate, setForceUpdate] = useState(0); // Para forzar re-renderizado
 
   const t = translations[currentLanguage as keyof typeof translations];
 
@@ -277,7 +278,8 @@ const HomePage: React.FC = () => {
     return result;
   };
 
-  const productsData = getProductsData();
+  // Usar useMemo para evitar recálculos innecesarios
+  const productsData = React.useMemo(() => getProductsData(), [t]);
 
   // Datos del carrusel
   const carouselImages = [
@@ -413,10 +415,11 @@ const HomePage: React.FC = () => {
     }
   }, []);
 
-  // Actualizar productos cuando cambia el idioma
-  useEffect(() => {
-    // Los productos se regeneran automáticamente cuando cambia el idioma
-  }, [currentLanguage]);
+  // Forzar re-renderizado cuando cambia la moneda
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCurrency(e.target.value);
+    setForceUpdate(prev => prev + 1); // Forzar re-renderizado
+  };
 
   // Funciones
   const showSection = (sectionId: string) => {
@@ -539,7 +542,7 @@ const HomePage: React.FC = () => {
           <select 
             id="currency" 
             value={currency} 
-            onChange={(e) => setCurrency(e.target.value)}
+            onChange={handleCurrencyChange}
           >
             <option value="USD">USD - US Dollar</option>
             <option value="EUR">EUR - Euro</option>
@@ -681,9 +684,9 @@ const HomePage: React.FC = () => {
             )}
           </div>
 
-          {/* Páginas de productos */}
+          {/* Páginas de productos - key forzado para re-renderizar */}
           {activeProductPage && productsData[activeProductPage] && (
-            <div className="products-grid">
+            <div className="products-grid" key={`products-${activeProductPage}-${currency}-${forceUpdate}`}>
               {productsData[activeProductPage].map((product) => (
                 <div key={product.id} className="product">
                   <div className="product-image-container">
