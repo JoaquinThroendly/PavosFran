@@ -290,9 +290,9 @@ const HomePage: React.FC = () => {
   // Datos del carrusel
   const carouselImages = [
     "/img/carrousel/1.jpg",
-    "/img/carrousel/2.jfif",
-    "/img/carrousel/3.jfif",
-    "/img/carrousel/4.jfif"
+    "/img/carrousel/2.jpg",
+    "/img/carrousel/3.jpg",
+    "/img/carrousel/4.jpeg"
   ];
 
   // Comentarios iniciales
