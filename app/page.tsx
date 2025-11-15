@@ -665,7 +665,7 @@ const HomePage: React.FC = () => {
                     <p>{t.monthlySubs}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(2)}>
-                    <img src="public/img/products/metodo de regalo-pica.png" alt="Cosmetics" />
+                    <img src="/img/products/metodo de regalo-pica.png" alt="Cosmetics" />
                     <h4>{t.cosmeticsGift}</h4>
                     <p>{t.skinsItems}</p>
                   </div>
