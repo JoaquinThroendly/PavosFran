@@ -11,7 +11,7 @@ const translations = {
     products: "Products",
     payments: "Payments",
     contact: "Contact",
-    welcome: "Welcome to Fran V-Bucks",
+    welcome: "Welcome to Pavos Fran",
     welcomeText: "We offer the best service so you can get everything you want from the Fortnite Item Shop.",
     userReviews: "User Reviews",
     seeReviews: "See what our customers say. Leave your review below!",
@@ -63,7 +63,7 @@ const translations = {
     products: "Productos",
     payments: "Pagos",
     contact: "Contacto",
-    welcome: "Bienvenido a Fran V-Bucks",
+    welcome: "Bienvenido a Pavos Fran",
     welcomeText: "Ofrecemos el mejor servicio para que puedas obtener todo lo que quieras de la Tienda de Fortnite.",
     userReviews: "Opiniones de Usuarios",
     seeReviews: "Mira lo que dicen nuestros clientes. ¡Deja tu reseña abajo!",
@@ -159,16 +159,15 @@ const HomePage: React.FC = () => {
   const [rateLoading, setRateLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('');
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [forceUpdate, setForceUpdate] = useState(0); // Para forzar re-renderizado
 
   const t = translations[currentLanguage as keyof typeof translations];
 
-  // Datos base de productos (sin traducciones)
+  // Datos base de productos CORREGIDOS (rutas de imágenes)
   const baseProductsData: { [key: number]: Omit<Product, 'name'>[] } = {
     1: [
       {
         id: 1,
-        image: "/img/products/fortnite-crew-1920x1080-26707a60b0b6.jpg",
+        image: "/img/products/club precios.png",
         prices: [
           { label: "3 Months", priceUSD: 15 },
           { label: "4 Months", priceUSD: 18 },
@@ -180,7 +179,7 @@ const HomePage: React.FC = () => {
     2: [
       {
         id: 2,
-        image: "/img/products/Fortnite_blog_gifting-coming-to-battle-royale_BR06_News_Featured_Gifting-1920x1080-57a0e0e15467c65cac208679c6b5b558a8e6b626.jpg",
+        image: "/img/products/metodo de regalo-pica.png",
         prices: [
           { label: "From 100 V-Bucks", priceUSD: 0.70 }
         ]
@@ -189,44 +188,51 @@ const HomePage: React.FC = () => {
     3: [
       {
         id: 3,
-        image: "/img/products/9b4542b3-5163-4d00-8e41-6d3a5bcf3073.jpg",
+        image: "/img/products/1 mes game pass-pica.png",
         prices: [
           { label: "Price", priceUSD: 16.50 }
+        ]
+      },
+      {
+        id: 4,
+        image: "/img/products/3 meses game pass-pica.png",
+        prices: [
+          { label: "Price", priceUSD: 32.75 }
         ]
       }
     ],
     4: [
       {
-        id: 4,
-        image: "/img/products/simple-pack.jpg",
-        prices: [
-          { label: "Price", priceUSD: 22 }
-        ]
-      },
-      {
         id: 5,
-        image: "/img/products/exclusive-pack.jpg",
+        image: "/img/products/economy.png",
         prices: [
           { label: "Price", priceUSD: 22 }
         ]
       },
       {
         id: 6,
-        image: "/img/products/pro-pack.jpg",
+        image: "/img/products/exclusive.png",
+        prices: [
+          { label: "Price", priceUSD: 22 }
+        ]
+      },
+      {
+        id: 7,
+        image: "/img/products/pro.png",
         prices: [
           { label: "Price", priceUSD: 33 }
         ]
       },
       {
-        id: 7,
-        image: "/img/products/super-pack.jpg",
+        id: 8,
+        image: "/img/products/super.png",
         prices: [
           { label: "Price", priceUSD: 50 }
         ]
       },
       {
-        id: 8,
-        image: "/img/products/mega-pack.jpg",
+        id: 9,
+        image: "/img/products/mega.png",
         prices: [
           { label: "Price", priceUSD: 80 }
         ]
@@ -234,8 +240,8 @@ const HomePage: React.FC = () => {
     ],
     5: [
       {
-        id: 9,
-        image: "/img/products/fortnite-vbucks-1200x1200-1200x1200-8050abc986bf.png",
+        id: 10,
+        image: "/img/products/pavos precios-pica.png",
         prices: [
           { label: "3100V", priceUSD: 12 },
           { label: "5000V", priceUSD: 27 },
@@ -245,8 +251,8 @@ const HomePage: React.FC = () => {
     ],
     6: [
       {
-        id: 10,
-        image: "/img/products/discounts.jpg",
+        id: 11,
+        image: "/img/products/TERMINOS-pica.png",
         prices: [
           { label: "Contact for bulk deals", priceUSD: 0 }
         ]
@@ -255,7 +261,7 @@ const HomePage: React.FC = () => {
   };
 
   // Función para obtener productos con nombres traducidos
-  const getProductsData = () => {
+  const getProductsData = React.useCallback(() => {
     const productNames: { [key: number]: string[] } = {
       1: [t.fortniteCrew],
       2: [t.cosmeticsGift],
@@ -276,10 +282,10 @@ const HomePage: React.FC = () => {
     });
 
     return result;
-  };
+  }, [t]);
 
-  // Usar useMemo para evitar recálculos innecesarios
-  const productsData = React.useMemo(() => getProductsData(), [t]);
+  // Usar useMemo con dependencias correctas
+  const productsData = React.useMemo(() => getProductsData(), [getProductsData]);
 
   // Datos del carrusel
   const carouselImages = [
@@ -356,7 +362,13 @@ const HomePage: React.FC = () => {
   // Función para convertir precios
   const convertPrice = (priceUSD: number): number => {
     const rate = exchangeRates[currency as keyof typeof exchangeRates] || 1;
-    return parseFloat((priceUSD * rate).toFixed(2));
+    const converted = priceUSD * rate;
+    
+    // Redondear según la moneda
+    if (['ARS', 'CLP', 'COP', 'UYU'].includes(currency)) {
+      return Math.round(converted);
+    }
+    return parseFloat(converted.toFixed(2));
   };
 
   // Función para formatear precio
@@ -378,8 +390,8 @@ const HomePage: React.FC = () => {
 
     const symbol = currencySymbols[currency] || '$';
     
-    if (['ARS', 'CLP', 'COP'].includes(currency)) {
-      return `${symbol}${Math.round(convertedPrice).toLocaleString()}`;
+    if (['ARS', 'CLP', 'COP', 'UYU'].includes(currency)) {
+      return `${symbol}${convertedPrice.toLocaleString()}`;
     } else {
       return `${symbol}${convertedPrice.toFixed(2)}`;
     }
@@ -415,13 +427,7 @@ const HomePage: React.FC = () => {
     }
   }, []);
 
-  // Forzar re-renderizado cuando cambia la moneda
-  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCurrency(e.target.value);
-    setForceUpdate(prev => prev + 1); // Forzar re-renderizado
-  };
-
-  // Funciones
+  // Funciones que faltaban
   const showSection = (sectionId: string) => {
     setActiveSection(sectionId);
     if (sectionId !== 'products') {
@@ -488,6 +494,10 @@ const HomePage: React.FC = () => {
     alert('Thank you for your review!');
   };
 
+  const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCurrency(e.target.value);
+  };
+
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -525,7 +535,7 @@ const HomePage: React.FC = () => {
 
       <header className="header">
         <img src="/img/logo/logo.png" alt="Store Logo" />
-        <h1>Fran V-Bucks</h1>
+        <h1>Pavos Fran</h1>
       </header>
 
       <nav className="nav">
@@ -684,9 +694,9 @@ const HomePage: React.FC = () => {
             )}
           </div>
 
-          {/* Páginas de productos - key forzado para re-renderizar */}
+          {/* Páginas de productos */}
           {activeProductPage && productsData[activeProductPage] && (
-            <div className="products-grid" key={`products-${activeProductPage}-${currency}-${forceUpdate}`}>
+            <div className="products-grid">
               {productsData[activeProductPage].map((product) => (
                 <div key={product.id} className="product">
                   <div className="product-image-container">
@@ -765,10 +775,10 @@ const HomePage: React.FC = () => {
           
           <div className="social-media">
             <h3>{t.followUs}</h3>
-            <a href="https://instagram.com/yourusername">📷 Instagram</a>
-            <a href="https://facebook.com/yourusername">👥 Facebook</a>
-            <a href="https://twitter.com/yourusername">🐦 Twitter</a>
-            <a href="https://tiktok.com/yourusername">🎵 TikTok</a>
+            <a href="https://instagram.com/yourusername"> Instagram</a>
+            <a href="https://facebook.com/yourusername"> Facebook</a>
+            
+            
           </div>
         </section>
       )}
@@ -777,7 +787,7 @@ const HomePage: React.FC = () => {
         <div className="visit-counter">
           <p>{t.visits}: <span>{visitCount}</span></p>
         </div>
-        <p>&copy; 2025 Fran V-Bucks. {t.allRightsReserved}</p>
+        <p>&copy; 2025 Pavos Fran. {t.allRightsReserved}</p>
       </footer>
     </div>
   );
