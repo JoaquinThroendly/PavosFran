@@ -117,7 +117,7 @@ const defaultExchangeRates = {
   USD: 1,
   EUR: 0.92,
   MXN: 16.80,
-  ARS: 850,
+  ARS: 1450,
   BRL: 5.05,
   CLP: 920,
   COP: 3900,
@@ -660,32 +660,32 @@ const HomePage: React.FC = () => {
                 
                 <div className="categories-grid">
                   <div className="category-card" onClick={() => showProductPage(1)}>
-                    <img src="/img/products/fortnite-crew-1920x1080-26707a60b0b6.jpg" alt="Fortnite Crew" />
+                    <img src="/img/products/club precios.png" alt="Fortnite Crew" />
                     <h4>{t.fortniteCrew}</h4>
                     <p>{t.monthlySubs}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(2)}>
-                    <img src="/img/products/Fortnite_blog_gifting-coming-to-battle-royale_BR06_News_Featured_Gifting-1920x1080-57a0e0e15467c65cac208679c6b5b558a8e6b626.jpg" alt="Cosmetics" />
+                    <img src="public/img/products/metodo de regalo-pica.png" alt="Cosmetics" />
                     <h4>{t.cosmeticsGift}</h4>
                     <p>{t.skinsItems}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(3)}>
-                    <img src="/img/products/9b4542b3-5163-4d00-8e41-6d3a5bcf3073.jpg" alt="Game Pass" />
+                    <img src="img/products/1 mes game pass-pica.png" alt="Game Pass" />
                     <h4>{t.gamePass}</h4>
                     <p>{t.xboxSub}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(4)}>
-                    <img src="/img/products/sello-exclusivo-17012788.webp" alt="Exclusive Packs" />
+                    <img src="/img/products/exclusive.png" alt="Exclusive Packs" />
                     <h4>{t.exclusivePacks}</h4>
                     <p>{t.specialBundles}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(5)}>
-                    <img src="/img/products/fortnite-vbucks-1200x1200-1200x1200-8050abc986bf.png" alt="V-Bucks" />
+                    <img src="img/products/pavos precios-pica.png" alt="V-Bucks" />
                     <h4>{t.vbucks}</h4>
                     <p>{t.gameCurrency}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(6)}>
-                    <img src="/img/products/discounts-grunge-stamp-in-english-language.jpg" alt="Discounts" />
+                    <img src="img/products/TERMINOS-pica.png" alt="Discounts" />
                     <h4>{t.discounts}</h4>
                     <p>{t.bulkDeals}</p>
                   </div>
