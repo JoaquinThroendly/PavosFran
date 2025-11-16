@@ -290,10 +290,10 @@ const HomePage: React.FC = () => {
   // Datos del carrusel
   const carouselImages = [
     "/img/carrousel/banner-pica.png",
-    "/img/carrousel/fortshop.png",
-    "/img/carrousel/bucks.png",
-    "/img/carrousel/cosm.png",
-    "/img/carrousel/packs.png"
+    "/img/carrousel/1.png",
+    "/img/carrousel/2.png",
+    "/img/carrousel/3.png",
+    "/img/carrousel/4.png"
 
   ];
 
