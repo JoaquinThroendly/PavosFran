@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import './styles.css';
 
-// Textos traducidos
+// Textos traducidos COMPLETOS
 const translations = {
   en: {
     home: "Home",
@@ -56,7 +56,19 @@ const translations = {
     exchangeRate: "Exchange Rate",
     loadingRates: "Loading exchange rates...",
     rateUpdate: "Last update",
-    apiError: "Using default rates"
+    apiError: "Using default rates",
+    // NUEVAS TRADUCCIONES PARA LA TIENDA FORTNITE
+    fortniteShop: "Fortnite Item Shop",
+    dailyItems: "Daily Items",
+    featuredItems: "Featured Items",
+    price: "Price",
+    rarity: "Rarity",
+    availableUntil: "Available Until",
+    loadingShop: "Loading Fortnite Shop...",
+    errorLoadingShop: "Error loading shop",
+    refreshShop: "Refresh Shop",
+    vBucks: "V-Bucks",
+    today: "Today"
   },
   es: {
     home: "Inicio",
@@ -108,7 +120,19 @@ const translations = {
     exchangeRate: "Tipo de Cambio",
     loadingRates: "Cargando tasas de cambio...",
     rateUpdate: "Última actualización",
-    apiError: "Usando tasas predeterminadas"
+    apiError: "Usando tasas predeterminadas",
+    // NUEVAS TRADUCCIONES PARA LA TIENDA FORTNITE
+    fortniteShop: "Tienda de Fortnite",
+    dailyItems: "Items Diarios",
+    featuredItems: "Items Destacados",
+    price: "Precio",
+    rarity: "Rareza",
+    availableUntil: "Disponible Hasta",
+    loadingShop: "Cargando Tienda de Fortnite...",
+    errorLoadingShop: "Error cargando la tienda",
+    refreshShop: "Actualizar Tienda",
+    vBucks: "Pavos",
+    today: "Hoy"
   }
 };
 
@@ -145,6 +169,35 @@ interface Comment {
   rating: number;
 }
 
+// NUEVA INTERFACE PARA ITEMS DE FORTNITE
+interface FortniteItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  rarity: {
+    value: string;
+    displayValue: string;
+    backendValue: string;
+  };
+  images: {
+    icon: string;
+    featured?: string;
+    background?: string;
+  };
+  type: {
+    value: string;
+    displayValue: string;
+    backendValue: string;
+  };
+}
+
+interface FortniteShop {
+  daily: FortniteItem[];
+  featured: FortniteItem[];
+  lastUpdate: string;
+}
+
 const HomePage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [languageDropdown, setLanguageDropdown] = useState(false);
@@ -154,12 +207,20 @@ const HomePage: React.FC = () => {
   const [visitCount, setVisitCount] = useState(0);
   const [currency, setCurrency] = useState('USD');
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+  
+  // CAMBIO: Idioma predeterminado ahora es español
+  const [currentLanguage, setCurrentLanguage] = useState('es');
+  
   const [exchangeRates, setExchangeRates] = useState(defaultExchangeRates);
   const [rateLoading, setRateLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('');
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  
+  // NUEVOS ESTADOS PARA LA TIENDA FORTNITE
+  const [fortniteShop, setFortniteShop] = useState<FortniteShop | null>(null);
+  const [shopLoading, setShopLoading] = useState(false);
+  const [shopError, setShopError] = useState<string | null>(null);
 
   const t = translations[currentLanguage as keyof typeof translations];
 
@@ -302,27 +363,124 @@ const HomePage: React.FC = () => {
     {
       id: 1,
       name: "Carlos M.",
-      comment: "Amazing service! Got my V-Bucks instantly.",
+      comment: "¡Servicio increíble! Recibí mis V-Bucks al instante.",
       date: "15/10/2023",
       rating: 5
     },
     {
       id: 2,
       name: "Ana L.",
-      comment: "Fast delivery and great prices.",
+      comment: "Entrega rápida y precios geniales.",
       date: "20/10/2023",
       rating: 4
     },
     {
       id: 3,
       name: "Jorge P.",
-      comment: "Real deal! Everything as promised.",
+      comment: "¡Totalmente confiable! Todo como se prometió.",
       date: "25/10/2023",
       rating: 5
     }
   ];
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
+
+  // NUEVA FUNCIÓN PARA OBTENER LA TIENDA DE FORTNITE
+  const fetchFortniteShop = async () => {
+    setShopLoading(true);
+    setShopError(null);
+    
+    try {
+      const response = await fetch('https://fortnite-api.com/v2/shop/br');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.status === 200) {
+        const processedShop = processShopData(data.data);
+        setFortniteShop(processedShop);
+      } else {
+        throw new Error(data.error || 'Unknown API error');
+      }
+    } catch (error) {
+      console.error('Error fetching Fortnite shop:', error);
+      setShopError(t.errorLoadingShop);
+    } finally {
+      setShopLoading(false);
+    }
+  };
+
+  // FUNCIÓN PARA PROCESAR LOS DATOS DE LA TIENDA
+  const processShopData = (shopData: any): FortniteShop => {
+    const dailyItems: FortniteItem[] = [];
+    const featuredItems: FortniteItem[] = [];
+
+    // Procesar items diarios
+    if (shopData.daily && shopData.daily.entries) {
+      shopData.daily.entries.forEach((entry: any) => {
+        if (entry.items && entry.items[0]) {
+          const item = entry.items[0];
+          dailyItems.push({
+            id: entry.offerId,
+            name: item.name,
+            description: item.description,
+            price: entry.finalPrice,
+            rarity: item.rarity,
+            images: item.images,
+            type: item.type
+          });
+        }
+      });
+    }
+
+    // Procesar items destacados
+    if (shopData.featured && shopData.featured.entries) {
+      shopData.featured.entries.forEach((entry: any) => {
+        if (entry.items && entry.items[0]) {
+          const item = entry.items[0];
+          featuredItems.push({
+            id: entry.offerId,
+            name: item.name,
+            description: item.description,
+            price: entry.finalPrice,
+            rarity: item.rarity,
+            images: item.images,
+            type: item.type
+          });
+        }
+      });
+    }
+
+    return {
+      daily: dailyItems,
+      featured: featuredItems,
+      lastUpdate: new Date().toISOString()
+    };
+  };
+
+  // FUNCIÓN PARA OBTENER COLOR SEGÚN RAREZA
+  const getRarityColor = (rarity: string): string => {
+    const rarityColors: { [key: string]: string } = {
+      'common': '#b0b0b0',
+      'uncommon': '#00aeff',
+      'rare': '#9d38bd',
+      'epic': '#d42cca',
+      'legendary': '#ffaa00',
+      'marvel': '#ff4444',
+      'dark': '#2e2e2e',
+      'dc': '#007acc',
+      'lava': '#ff6b00',
+      'frozen': '#00ffff',
+      'shadow': '#8a2be2',
+      'icon': '#32cd32',
+      'star wars': '#ffd700'
+    };
+    
+    return rarityColors[rarity.toLowerCase()] || '#b0b0b0';
+  };
 
   // Función simplificada para obtener tasas de cambio
   const fetchExchangeRates = async () => {
@@ -413,12 +571,19 @@ const HomePage: React.FC = () => {
     }
 
     fetchExchangeRates();
+    fetchFortniteShop(); // Cargar tienda Fortnite al inicio
 
     const carouselInterval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselImages.length);
     }, 3000);
 
-    return () => clearInterval(carouselInterval);
+    // Actualizar tienda cada hora
+    const shopInterval = setInterval(fetchFortniteShop, 60 * 60 * 1000);
+
+    return () => {
+      clearInterval(carouselInterval);
+      clearInterval(shopInterval);
+    };
   }, []);
 
   // Cargar idioma preferido
@@ -432,7 +597,7 @@ const HomePage: React.FC = () => {
   // Funciones que faltaban
   const showSection = (sectionId: string) => {
     setActiveSection(sectionId);
-    if (sectionId !== 'products') {
+    if (sectionId !== 'products' && sectionId !== 'fortnite-shop') {
       setProductsWindow(false);
       setActiveProductPage(null);
       setSelectedProduct(null);
@@ -473,7 +638,7 @@ const HomePage: React.FC = () => {
 
   const contactWhatsApp = (productName: string) => {
     const phoneNumber = "1234567890";
-    const message = `Hello! I'm interested in: ${productName}`;
+    const message = `¡Hola! Estoy interesado en: ${productName}`;
     const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
@@ -489,7 +654,7 @@ const HomePage: React.FC = () => {
     const comment = formData.get('comment') as string;
 
     if (selectedRating === 0) {
-      alert('Please select a rating');
+      alert(currentLanguage === 'es' ? 'Por favor selecciona una calificación' : 'Please select a rating');
       return;
     }
 
@@ -504,7 +669,7 @@ const HomePage: React.FC = () => {
     setComments([newComment, ...comments]);
     e.currentTarget.reset();
     setSelectedRating(0);
-    alert('Thank you for your review!');
+    alert(currentLanguage === 'es' ? '¡Gracias por tu reseña!' : 'Thank you for your review!');
   };
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -541,7 +706,7 @@ const HomePage: React.FC = () => {
 
       {/* Botón de WhatsApp flotante */}
       <div className="whatsapp-float">
-        <button className="whatsapp-btn" onClick={() => contactWhatsApp('General Inquiry')}>
+        <button className="whatsapp-btn" onClick={() => contactWhatsApp('Consulta General')}>
           <span>{t.whatsappMessage}</span>
         </button>
       </div>
@@ -554,6 +719,7 @@ const HomePage: React.FC = () => {
       <nav className="nav">
         <a onClick={() => showSection('home')}>{t.home}</a>
         <a onClick={() => showSection('products')}>{t.products}</a>
+        <a onClick={() => showSection('fortnite-shop')}>🛒 {t.fortniteShop}</a>
         <a onClick={() => showSection('payments')}>{t.payments}</a>
         <a onClick={() => showSection('contact')}>{t.contact}</a>
       </nav>
@@ -567,15 +733,15 @@ const HomePage: React.FC = () => {
             value={currency} 
             onChange={handleCurrencyChange}
           >
-            <option value="USD">USD - US Dollar</option>
+            <option value="USD">USD - Dólar Americano</option>
             <option value="EUR">EUR - Euro</option>
-            <option value="MXN">MXN - Mexican Peso</option>
-            <option value="ARS">ARS - Argentine Peso</option>
-            <option value="BRL">BRL - Brazilian Real</option>
-            <option value="CLP">CLP - Chilean Peso</option>
-            <option value="COP">COP - Colombian Peso</option>
-            <option value="PEN">PEN - Peruvian Sol</option>
-            <option value="UYU">UYU - Uruguayan Peso</option>
+            <option value="MXN">MXN - Peso Mexicano</option>
+            <option value="ARS">ARS - Peso Argentino</option>
+            <option value="BRL">BRL - Real Brasileño</option>
+            <option value="CLP">CLP - Peso Chileno</option>
+            <option value="COP">COP - Peso Colombiano</option>
+            <option value="PEN">PEN - Sol Peruano</option>
+            <option value="UYU">UYU - Peso Uruguayo</option>
           </select>
         </div>
 
@@ -733,6 +899,143 @@ const HomePage: React.FC = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* NUEVA SECCIÓN: TIENDA DE FORTNITE */}
+      {activeSection === 'fortnite-shop' && (
+        <section className="section fortnite-shop-section">
+          <div className="shop-header">
+            <h2>🎮 {t.fortniteShop}</h2>
+            <button 
+              className="btn refresh-btn" 
+              onClick={fetchFortniteShop}
+              disabled={shopLoading}
+            >
+              {shopLoading ? '🔄' : '🔄'} {t.refreshShop}
+            </button>
+          </div>
+
+          {shopLoading && (
+            <div className="loading-shop">
+              <p>{t.loadingShop}</p>
+            </div>
+          )}
+
+          {shopError && (
+            <div className="shop-error">
+              <p>❌ {shopError}</p>
+              <button className="btn" onClick={fetchFortniteShop}>
+                {t.refreshShop}
+              </button>
+            </div>
+          )}
+
+          {fortniteShop && !shopLoading && (
+            <div className="fortnite-shop">
+              {/* Items Destacados */}
+              <div className="shop-category">
+                <h3>⭐ {t.featuredItems}</h3>
+                <div className="items-grid">
+                  {fortniteShop.featured.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="shop-item"
+                      style={{ 
+                        borderColor: getRarityColor(item.rarity.value),
+                        background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}20, transparent)`
+                      }}
+                    >
+                      <div className="item-image-container">
+                        <img 
+                          src={item.images.icon} 
+                          alt={item.name}
+                          className="item-image"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/img/placeholder.webp';
+                          }}
+                        />
+                      </div>
+                      <div className="item-info">
+                        <h4 className="item-name">{item.name}</h4>
+                        <p className="item-description">{item.description}</p>
+                        <div className="item-details">
+                          <span 
+                            className="item-rarity"
+                            style={{ color: getRarityColor(item.rarity.value) }}
+                          >
+                            {item.rarity.displayValue}
+                          </span>
+                          <span className="item-price">
+                            🪙 {item.price} {t.vBucks}
+                          </span>
+                        </div>
+                        <button 
+                          className="btn item-buy-btn"
+                          onClick={() => contactWhatsApp(`Item de Fortnite: ${item.name} - ${item.price} Pavos`)}
+                        >
+                          {t.contactWhatsApp}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Items Diarios */}
+              <div className="shop-category">
+                <h3>📅 {t.dailyItems}</h3>
+                <div className="items-grid">
+                  {fortniteShop.daily.map((item) => (
+                    <div 
+                      key={item.id} 
+                      className="shop-item"
+                      style={{ 
+                        borderColor: getRarityColor(item.rarity.value),
+                        background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}20, transparent)`
+                      }}
+                    >
+                      <div className="item-image-container">
+                        <img 
+                          src={item.images.icon} 
+                          alt={item.name}
+                          className="item-image"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/img/placeholder.webp';
+                          }}
+                        />
+                      </div>
+                      <div className="item-info">
+                        <h4 className="item-name">{item.name}</h4>
+                        <p className="item-description">{item.description}</p>
+                        <div className="item-details">
+                          <span 
+                            className="item-rarity"
+                            style={{ color: getRarityColor(item.rarity.value) }}
+                          >
+                            {item.rarity.displayValue}
+                          </span>
+                          <span className="item-price">
+                            🪙 {item.price} {t.vBucks}
+                          </span>
+                        </div>
+                        <button 
+                          className="btn item-buy-btn"
+                          onClick={() => contactWhatsApp(`Item de Fortnite: ${item.name} - ${item.price} Pavos`)}
+                        >
+                          {t.contactWhatsApp}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="shop-footer">
+                <p><small>{t.rateUpdate}: {new Date(fortniteShop.lastUpdate).toLocaleString()}</small></p>
+              </div>
             </div>
           )}
         </section>
