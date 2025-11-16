@@ -162,12 +162,12 @@ const HomePage: React.FC = () => {
 
   const t = translations[currentLanguage as keyof typeof translations];
 
-  // Datos base de productos CORREGIDOS (rutas de imágenes)
+  // Datos base de productos ACTUALIZADOS a WebP
   const baseProductsData: { [key: number]: Omit<Product, 'name'>[] } = {
     1: [
       {
         id: 1,
-        image: "/img/products/club precios.png",
+        image: "/img/products/club precios.webp",
         prices: [
           { label: "3 Months", priceUSD: 15 },
           { label: "4 Months", priceUSD: 18 },
@@ -179,7 +179,7 @@ const HomePage: React.FC = () => {
     2: [
       {
         id: 2,
-        image: "/img/products/metodo de regalo-pica.png",
+        image: "/img/products/metodo de regalo-pica.webp",
         prices: [
           { label: "From 100 V-Bucks", priceUSD: 0.70 }
         ]
@@ -188,14 +188,14 @@ const HomePage: React.FC = () => {
     3: [
       {
         id: 3,
-        image: "/img/products/1 mes game pass-pica.png",
+        image: "/img/products/1 mes game pass-pica.webp",
         prices: [
           { label: "Price", priceUSD: 16.50 }
         ]
       },
       {
         id: 4,
-        image: "/img/products/3 meses game pass-pica.png",
+        image: "/img/products/3 meses game pass-pica.webp",
         prices: [
           { label: "Price", priceUSD: 32.75 }
         ]
@@ -204,35 +204,35 @@ const HomePage: React.FC = () => {
     4: [
       {
         id: 5,
-        image: "/img/products/economy.png",
+        image: "/img/products/economy.webp",
         prices: [
           { label: "Price", priceUSD: 22 }
         ]
       },
       {
         id: 6,
-        image: "/img/products/exclusive.png",
+        image: "/img/products/exclusive.webp",
         prices: [
           { label: "Price", priceUSD: 22 }
         ]
       },
       {
         id: 7,
-        image: "/img/products/pro.png",
+        image: "/img/products/pro.webp",
         prices: [
           { label: "Price", priceUSD: 33 }
         ]
       },
       {
         id: 8,
-        image: "/img/products/super.png",
+        image: "/img/products/super.webp",
         prices: [
           { label: "Price", priceUSD: 50 }
         ]
       },
       {
         id: 9,
-        image: "/img/products/mega.png",
+        image: "/img/products/mega.webp",
         prices: [
           { label: "Price", priceUSD: 80 }
         ]
@@ -241,7 +241,7 @@ const HomePage: React.FC = () => {
     5: [
       {
         id: 10,
-        image: "/img/products/pavos precios-pica.png",
+        image: "/img/products/pavos precios-pica.webp",
         prices: [
           { label: "3100V", priceUSD: 12 },
           { label: "5000V", priceUSD: 27 },
@@ -252,7 +252,7 @@ const HomePage: React.FC = () => {
     6: [
       {
         id: 11,
-        image: "/img/products/TERMINOS-pica.png",
+        image: "/img/products/TERMINOS-pica.webp",
         prices: [
           { label: "Contact for bulk deals", priceUSD: 0 }
         ]
@@ -287,14 +287,13 @@ const HomePage: React.FC = () => {
   // Usar useMemo con dependencias correctas
   const productsData = React.useMemo(() => getProductsData(), [getProductsData]);
 
-  // Datos del carrusel
+  // Datos del carrusel ACTUALIZADOS a WebP
   const carouselImages = [
-    "/img/carrousel/banner-pica.png",
-    "/img/carrousel/1.png",
-    "/img/carrousel/2.png",
-    "/img/carrousel/3.png",
-    "/img/carrousel/4.png"
-
+    "/img/carrousel/banner-pica.webp",
+    "/img/carrousel/1.webp",
+    "/img/carrousel/2.webp",
+    "/img/carrousel/3.webp",
+    "/img/carrousel/4.webp"
   ];
 
   // Comentarios iniciales
@@ -535,9 +534,9 @@ const HomePage: React.FC = () => {
         </button>
       </div>
 
+      {/* Header actualizado - solo imagen centrada */}
       <header className="header">
-        <img src="/img/logo/logo.png" alt="Store Logo" />
-        <h1>Pavos Fran</h1>
+        <img src="/img/header/header.webp" alt="Pavos Fran Header" className="header-image" />
       </header>
 
       <nav className="nav">
@@ -662,32 +661,32 @@ const HomePage: React.FC = () => {
                 
                 <div className="categories-grid">
                   <div className="category-card" onClick={() => showProductPage(1)}>
-                    <img src="/img/products/club precios.png" alt="Fortnite Crew" />
+                    <img src="/img/products/club precios.webp" alt="Fortnite Crew" />
                     <h4>{t.fortniteCrew}</h4>
                     <p>{t.monthlySubs}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(2)}>
-                    <img src="/img/products/metodo de regalo-pica.png" alt="Cosmetics" />
+                    <img src="/img/products/metodo de regalo-pica.webp" alt="Cosmetics" />
                     <h4>{t.cosmeticsGift}</h4>
                     <p>{t.skinsItems}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(3)}>
-                    <img src="img/products/1 mes game pass-pica.png" alt="Game Pass" />
+                    <img src="/img/products/1 mes game pass-pica.webp" alt="Game Pass" />
                     <h4>{t.gamePass}</h4>
                     <p>{t.xboxSub}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(4)}>
-                    <img src="/img/products/exclusive.png" alt="Exclusive Packs" />
+                    <img src="/img/products/exclusive.webp" alt="Exclusive Packs" />
                     <h4>{t.exclusivePacks}</h4>
                     <p>{t.specialBundles}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(5)}>
-                    <img src="img/products/pavos precios-pica.png" alt="V-Bucks" />
+                    <img src="/img/products/pavos precios-pica.webp" alt="V-Bucks" />
                     <h4>{t.vbucks}</h4>
                     <p>{t.gameCurrency}</p>
                   </div>
                   <div className="category-card" onClick={() => showProductPage(6)}>
-                    <img src="img/products/TERMINOS-pica.png" alt="Discounts" />
+                    <img src="/img/products/TERMINOS-pica.webp" alt="Discounts" />
                     <h4>{t.discounts}</h4>
                     <p>{t.bulkDeals}</p>
                   </div>
@@ -779,8 +778,6 @@ const HomePage: React.FC = () => {
             <h3>{t.followUs}</h3>
             <a href="https://instagram.com/yourusername"> Instagram</a>
             <a href="https://facebook.com/yourusername"> Facebook</a>
-            
-            
           </div>
         </section>
       )}
