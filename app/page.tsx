@@ -159,6 +159,7 @@ const HomePage: React.FC = () => {
   const [rateLoading, setRateLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('');
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const t = translations[currentLanguage as keyof typeof translations];
 
@@ -434,6 +435,7 @@ const HomePage: React.FC = () => {
     if (sectionId !== 'products') {
       setProductsWindow(false);
       setActiveProductPage(null);
+      setSelectedProduct(null);
     }
   };
 
@@ -451,12 +453,22 @@ const HomePage: React.FC = () => {
     setProductsWindow(!productsWindow);
     if (productsWindow) {
       setActiveProductPage(null);
+      setSelectedProduct(null);
     }
   };
 
   const showProductPage = (pageNumber: number) => {
     setActiveProductPage(pageNumber);
     setProductsWindow(false);
+    setSelectedProduct(null);
+  };
+
+  const openProductModal = (product: Product) => {
+    setSelectedProduct(product);
+  };
+
+  const closeProductModal = () => {
+    setSelectedProduct(null);
   };
 
   const contactWhatsApp = (productName: string) => {
@@ -534,7 +546,7 @@ const HomePage: React.FC = () => {
         </button>
       </div>
 
-      {/* Header actualizado - solo imagen centrada */}
+      {/* Header actualizado - imagen a todo ancho */}
       <header className="header">
         <img src="/img/header/header.webp" alt="Pavos Fran Header" className="header-image" />
       </header>
@@ -699,9 +711,9 @@ const HomePage: React.FC = () => {
           {activeProductPage && productsData[activeProductPage] && (
             <div className="products-grid">
               {productsData[activeProductPage].map((product) => (
-                <div key={product.id} className="product">
+                <div key={product.id} className="product" onClick={() => openProductModal(product)}>
                   <div className="product-image-container">
-                    <img src={product.image} alt={product.name} />
+                    <img src={product.image} alt={product.name} className="product-image" />
                   </div>
                   <div className="product-content">
                     <h3>{product.name}</h3>
@@ -712,7 +724,10 @@ const HomePage: React.FC = () => {
                         </p>
                       ))}
                     </div>
-                    <button className="btn" onClick={() => contactWhatsApp(product.name)}>
+                    <button className="btn" onClick={(e) => {
+                      e.stopPropagation();
+                      contactWhatsApp(product.name);
+                    }}>
                       {t.contactWhatsApp}
                     </button>
                   </div>
@@ -721,6 +736,35 @@ const HomePage: React.FC = () => {
             </div>
           )}
         </section>
+      )}
+
+      {/* Modal de producto ampliado */}
+      {selectedProduct && (
+        <div className="product-modal-overlay" onClick={closeProductModal}>
+          <div className="product-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close-btn" onClick={closeProductModal}>
+              ✕
+            </button>
+            <div className="modal-content">
+              <div className="modal-image-container">
+                <img src={selectedProduct.image} alt={selectedProduct.name} className="modal-image" />
+              </div>
+              <div className="modal-info">
+                <h3>{selectedProduct.name}</h3>
+                <div className="modal-prices">
+                  {selectedProduct.prices.map((price, index) => (
+                    <p key={index} className="modal-price">
+                      {price.label}: <strong>{formatPrice(price.priceUSD)}</strong>
+                    </p>
+                  ))}
+                </div>
+                <button className="btn modal-contact-btn" onClick={() => contactWhatsApp(selectedProduct.name)}>
+                  {t.contactWhatsApp}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Sección Payments */}
