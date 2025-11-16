@@ -27,7 +27,7 @@ body::before {
     z-index: -1;
 }
 
-/* Header adaptativo - imagen completa sin recortes */
+/* Header con mismo tamaño que el carrusel */
 .header {
     width: 100%;
     margin: 0;
@@ -40,17 +40,18 @@ body::before {
     border: none;
     overflow: hidden;
     position: relative;
-    /* Altura automática basada en el contenido */
+    /* Mismo tamaño que el carrusel */
     height: auto;
-    min-height: 120px; /* Altura mínima para que se vea bien */
+    max-height: 300px;
 }
 
 .header-image {
     width: 100%;
-    height: auto; /* Mantiene la proporción original de la imagen */
+    height: auto;
+    max-height: 300px;
     display: block;
-    object-fit: contain; /* Muestra la imagen completa sin recortar */
-    object-position: center; /* Centra la imagen */
+    object-fit: cover; /* Mismo que el carrusel para consistencia */
+    object-position: center;
 }
 
 /* Efecto de desvanecimiento opcional en los bordes */
@@ -326,7 +327,7 @@ h1, h2, h3 {
     border: 1px solid #ffffff;
 }
 
-/* Carrusel */
+/* Carrusel - Mismo tamaño que el header */
 .carousel {
     position: relative;
     width: 100%;
@@ -335,12 +336,13 @@ h1, h2, h3 {
     border-radius: 8px;
     box-shadow: 0 4px 20px #00ccff;
     border: 1px solid #00ccff;
+    max-height: 300px; /* Mismo que el header */
 }
 
 .carousel img {
     width: 100%;
     height: auto;
-    max-height: 300px;
+    max-height: 300px; /* Mismo que el header */
     object-fit: cover;
     display: none;
     transition: opacity 1s ease-in-out;
@@ -1005,22 +1007,28 @@ h1, h2, h3 {
     }
 }
 
-/* Header responsive para diferentes dispositivos */
+/* Header y carrusel responsive */
 @media (max-width: 768px) {
-    .header {
-        min-height: 100px;
+    .header,
+    .carousel,
+    .carousel img {
+        max-height: 250px;
     }
 }
 
 @media (max-width: 480px) {
-    .header {
-        min-height: 80px;
+    .header,
+    .carousel,
+    .carousel img {
+        max-height: 200px;
     }
 }
 
 @media (max-width: 360px) {
-    .header {
-        min-height: 60px;
+    .header,
+    .carousel,
+    .carousel img {
+        max-height: 150px;
     }
 }
 
