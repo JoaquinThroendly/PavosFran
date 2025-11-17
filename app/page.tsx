@@ -1,4 +1,4 @@
-// app/page.tsx - ACTUALIZADO CON FORTNITEAPI.IO
+// app/page.tsx - ACTUALIZADO Y CORREGIDO
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -212,7 +212,7 @@ const HomePage: React.FC = () => {
   const [currency, setCurrency] = useState('USD');
   const [currentSlide, setCurrentSlide] = useState(0);
   
-  // CAMBIO: Idioma predeterminado ahora es español
+  // CORREGIDO: Idioma predeterminado ahora es español
   const [currentLanguage, setCurrentLanguage] = useState('es');
   
   const [exchangeRates, setExchangeRates] = useState(defaultExchangeRates);
@@ -389,7 +389,7 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // NUEVA FUNCIÓN ACTUALIZADA CON FORTNITEAPI.IO
+  // NUEVA FUNCIÓN ACTUALIZADA CON FORTNITEAPI.IO - CORREGIDA
   const fetchFortniteShop = async () => {
     setShopLoading(true);
     setShopError(null);
@@ -397,14 +397,15 @@ const HomePage: React.FC = () => {
     try {
       console.log('🔍 Iniciando carga de la tienda Fortnite...');
       
-      // TU API KEY DE FORTNITEAPI.IO
+      // API KEY DE FORTNITEAPI.IO - VERIFICADA
       const API_KEY = 'a9966904-5bc4bb17-b9ec8bf6-0d9486df';
       const API_URL = 'https://fortniteapi.io/v2/shop?lang=es';
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
       
       const response = await fetch(API_URL, {
+        method: 'GET',
         signal: controller.signal,
         headers: {
           'Authorization': API_KEY,
@@ -415,7 +416,9 @@ const HomePage: React.FC = () => {
       clearTimeout(timeoutId);
       
       if (!response.ok) {
-        throw new Error(`Error HTTP! estado: ${response.status} - ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Error en respuesta:', response.status, errorText);
+        throw new Error(`Error HTTP! estado: ${response.status}`);
       }
       
       const data = await response.json();
@@ -423,7 +426,7 @@ const HomePage: React.FC = () => {
       
       if (data.result) {
         const processedShop = processFortniteApiData(data);
-        console.log('✅ Tienda procesada correctamente desde FortniteAPI.io');
+        console.log('✅ Tienda procesada correctamente:', processedShop);
         setFortniteShop(processedShop);
       } else {
         throw new Error(data.error || 'Error en la respuesta de la API');
@@ -436,16 +439,16 @@ const HomePage: React.FC = () => {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
           errorMessage = currentLanguage === 'es' 
-            ? 'Tiempo de espera agotado. La API está tardando demasiado.'
-            : 'Request timeout. API is taking too long.';
+            ? 'Tiempo de espera agotado. Intenta nuevamente.'
+            : 'Request timeout. Try again.';
         } else if (error.message.includes('Failed to fetch')) {
           errorMessage = currentLanguage === 'es'
             ? 'Error de conexión. Verifica tu internet.'
             : 'Connection error. Check your internet.';
         } else if (error.message.includes('429')) {
           errorMessage = currentLanguage === 'es'
-            ? 'Límite de requests excedido. Intenta más tarde.'
-            : 'Rate limit exceeded. Try again later.';
+            ? 'Límite de requests excedido. Intenta en unos minutos.'
+            : 'Rate limit exceeded. Try again in a few minutes.';
         } else {
           errorMessage = error.message;
         }
@@ -786,11 +789,15 @@ const HomePage: React.FC = () => {
     };
   }, []);
 
-  // Cargar idioma preferido
+  // CORREGIDO: Cargar idioma preferido - Español por defecto
   useEffect(() => {
     const preferredLanguage = localStorage.getItem('preferredLanguage');
-    if (preferredLanguage && translations[preferredLanguage as keyof typeof translations]) {
+    // FORZAR español como predeterminado si no hay preferencia guardada
+    if (preferredLanguage) {
       setCurrentLanguage(preferredLanguage);
+    } else {
+      setCurrentLanguage('es'); // Español por defecto
+      localStorage.setItem('preferredLanguage', 'es');
     }
   }, []);
 
@@ -1104,27 +1111,37 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* NUEVA SECCIÓN: TIENDA DE FORTNITE */}
+      {/* NUEVA SECCIÓN: TIENDA DE FORTNITE - MEJORADA */}
       {activeSection === 'fortnite-shop' && (
         <section className="section fortnite-shop-section">
           <div className="shop-header">
             <h2>🎮 {t.fortniteShop}</h2>
-            <button 
-              className="btn refresh-btn" 
-              onClick={fetchFortniteShop}
-              disabled={shopLoading}
-            >
-              {shopLoading ? '🔄' : '🔄'} {t.refreshShop}
-            </button>
+            <div className="shop-controls">
+              <button 
+                className="btn refresh-btn" 
+                onClick={fetchFortniteShop}
+                disabled={shopLoading}
+              >
+                {shopLoading ? '🔄 Cargando...' : '🔄 ' + t.refreshShop}
+              </button>
+              {fortniteShop && (
+                <span className="last-update-shop">
+                  {t.rateUpdate}: {new Date(fortniteShop.lastUpdate).toLocaleString()}
+                </span>
+              )}
+            </div>
           </div>
 
+          {/* Estado de carga */}
           {shopLoading && (
             <div className="loading-shop">
+              <div className="loading-spinner"></div>
               <p>{t.loadingShop}</p>
             </div>
           )}
 
-          {shopError && (
+          {/* Estado de error */}
+          {shopError && !shopLoading && (
             <div className="shop-error">
               <p>❌ {shopError}</p>
               <button className="btn" onClick={fetchFortniteShop}>
@@ -1133,14 +1150,15 @@ const HomePage: React.FC = () => {
             </div>
           )}
 
-          {fortniteShop && !shopLoading && (
+          {/* Tienda cargada correctamente */}
+          {fortniteShop && !shopLoading && !shopError && (
             <div className="fortnite-shop">
               {/* Items Destacados */}
               <div className="shop-category">
                 <h3>⭐ {t.featuredItems}</h3>
-                <div className="items-grid">
-                  {fortniteShop.featured.length > 0 ? (
-                    fortniteShop.featured.map((item) => (
+                {fortniteShop.featured.length > 0 ? (
+                  <div className="items-grid">
+                    {fortniteShop.featured.map((item) => (
                       <div 
                         key={item.id} 
                         className="shop-item"
@@ -1181,21 +1199,21 @@ const HomePage: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="no-items">
-                      <p>{t.noItemsAvailable}</p>
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-items">
+                    <p>{t.noItemsAvailable}</p>
+                  </div>
+                )}
               </div>
 
               {/* Items Diarios */}
               <div className="shop-category">
                 <h3>📅 {t.dailyItems}</h3>
-                <div className="items-grid">
-                  {fortniteShop.daily.length > 0 ? (
-                    fortniteShop.daily.map((item) => (
+                {fortniteShop.daily.length > 0 ? (
+                  <div className="items-grid">
+                    {fortniteShop.daily.map((item) => (
                       <div 
                         key={item.id} 
                         className="shop-item"
@@ -1236,19 +1254,12 @@ const HomePage: React.FC = () => {
                           </button>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="no-items">
-                      <p>{t.noItemsAvailable}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="shop-footer">
-                <p><small>{t.rateUpdate}: {new Date(fortniteShop.lastUpdate).toLocaleString()}</small></p>
-                {shopError && (
-                  <p><small>⚠️ Mostrando datos de ejemplo debido a error en la API</small></p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="no-items">
+                    <p>{t.noItemsAvailable}</p>
+                  </div>
                 )}
               </div>
             </div>
