@@ -1,4 +1,4 @@
-// app/page.tsx - ACTUALIZADO Y CORREGIDO
+// app/page.tsx - CORREGIDO COMPLETO
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -389,7 +389,7 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // NUEVA FUNCIÓN ACTUALIZADA CON FORTNITEAPI.IO - CORREGIDA
+  // FUNCIÓN SIMPLIFICADA PARA CARGAR LA TIENDA FORTNITE
   const fetchFortniteShop = async () => {
     setShopLoading(true);
     setShopError(null);
@@ -397,39 +397,29 @@ const HomePage: React.FC = () => {
     try {
       console.log('🔍 Iniciando carga de la tienda Fortnite...');
       
-      // API KEY DE FORTNITEAPI.IO - VERIFICADA
-      const API_KEY = 'a9966904-5bc4bb17-b9ec8bf6-0d9486df';
-      const API_URL = 'https://fortniteapi.io/v2/shop?lang=es';
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      // Usar API pública sin key primero para probar
+      const API_URL = 'https://fortnite-api.com/v2/shop/br';
       
       const response = await fetch(API_URL, {
         method: 'GET',
-        signal: controller.signal,
         headers: {
-          'Authorization': API_KEY,
           'Accept': 'application/json',
         }
       });
       
-      clearTimeout(timeoutId);
-      
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error en respuesta:', response.status, errorText);
         throw new Error(`Error HTTP! estado: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('📦 Datos recibidos de FortniteAPI.io:', data);
+      console.log('📦 Datos recibidos de Fortnite API:', data);
       
-      if (data.result) {
-        const processedShop = processFortniteApiData(data);
+      if (data.data) {
+        const processedShop = processFortniteApiData(data.data);
         console.log('✅ Tienda procesada correctamente:', processedShop);
         setFortniteShop(processedShop);
       } else {
-        throw new Error(data.error || 'Error en la respuesta de la API');
+        throw new Error('No se encontraron datos en la respuesta');
       }
     } catch (error) {
       console.error('❌ Error cargando tienda Fortnite:', error);
@@ -437,11 +427,7 @@ const HomePage: React.FC = () => {
       let errorMessage = t.errorLoadingShop;
       
       if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          errorMessage = currentLanguage === 'es' 
-            ? 'Tiempo de espera agotado. Intenta nuevamente.'
-            : 'Request timeout. Try again.';
-        } else if (error.message.includes('Failed to fetch')) {
+        if (error.message.includes('Failed to fetch')) {
           errorMessage = currentLanguage === 'es'
             ? 'Error de conexión. Verifica tu internet.'
             : 'Connection error. Check your internet.';
@@ -456,7 +442,7 @@ const HomePage: React.FC = () => {
       
       setShopError(errorMessage);
       
-      // Datos de ejemplo como respaldo
+      // Usar datos de ejemplo como respaldo
       const mockShopData = createMockShopData();
       setFortniteShop(mockShopData);
     } finally {
@@ -464,107 +450,40 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // NUEVA FUNCIÓN PARA PROCESAR DATOS DE FORTNITEAPI.IO
+  // FUNCIÓN SIMPLIFICADA PARA PROCESAR DATOS
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
 
-    console.log('🔄 Procesando datos de FortniteAPI.io...', apiData);
+    console.log('🔄 Procesando datos de la API...', apiData);
 
-    // Procesar items destacados (featured)
-    if (apiData.shop && Array.isArray(apiData.shop)) {
-      apiData.shop.forEach((item: any, index: number) => {
+    // Procesar items destacados
+    if (apiData.featured && apiData.featured.entries) {
+      apiData.featured.entries.forEach((entry: any, index: number) => {
         try {
-          if (item && item.name) {
+          if (entry && entry.items && entry.items[0]) {
+            const item = entry.items[0];
             const shopItem: FortniteItem = {
-              id: item.id || `item-${index}`,
-              name: item.name || 'Item sin nombre',
+              id: item.id || `featured-${index}`,
+              name: item.name || 'Item destacado',
               description: item.description || 'Sin descripción disponible',
-              price: item.vbucks || item.price || 0,
+              price: entry.finalPrice || item.price || 0,
               rarity: {
-                value: item.rarity?.id || 'common',
-                displayValue: item.rarity?.name || 'Común',
-                backendValue: item.rarity?.id || 'Common'
+                value: item.rarity?.value || 'common',
+                displayValue: item.rarity?.displayValue || 'Común',
+                backendValue: item.rarity?.backendValue || 'Common'
               },
               images: {
                 icon: item.images?.icon || '/img/placeholder.webp',
                 featured: item.images?.featured || item.images?.icon
               },
               type: {
-                value: item.type?.id || 'outfit',
-                displayValue: item.type?.name || 'Skin',
-                backendValue: item.type?.id || 'AthenaCharacter'
+                value: item.type?.value || 'outfit',
+                displayValue: item.type?.displayValue || 'Skin',
+                backendValue: item.type?.backendValue || 'AthenaCharacter'
               }
             };
-
-            // Determinar si es daily o featured basado en propiedades
-            if (item.section?.id === 'daily' || item.featured === false) {
-              dailyItems.push(shopItem);
-            } else {
-              featuredItems.push(shopItem);
-            }
-          }
-        } catch (error) {
-          console.warn(`Error procesando item ${index}:`, error);
-        }
-      });
-    }
-
-    // Si no hay items, usar secciones específicas
-    if (apiData.daily && Array.isArray(apiData.daily)) {
-      apiData.daily.forEach((item: any, index: number) => {
-        try {
-          if (item && item.name) {
-            dailyItems.push({
-              id: item.id || `daily-${index}`,
-              name: item.name || 'Item sin nombre',
-              description: item.description || 'Sin descripción disponible',
-              price: item.vbucks || item.price || 0,
-              rarity: {
-                value: item.rarity?.id || 'common',
-                displayValue: item.rarity?.name || 'Común',
-                backendValue: item.rarity?.id || 'Common'
-              },
-              images: {
-                icon: item.images?.icon || '/img/placeholder.webp'
-              },
-              type: {
-                value: item.type?.id || 'outfit',
-                displayValue: item.type?.name || 'Skin',
-                backendValue: item.type?.id || 'AthenaCharacter'
-              }
-            });
-          }
-        } catch (error) {
-          console.warn(`Error procesando item diario ${index}:`, error);
-        }
-      });
-    }
-
-    if (apiData.featured && Array.isArray(apiData.featured)) {
-      apiData.featured.forEach((item: any, index: number) => {
-        try {
-          if (item && item.name) {
-            featuredItems.push({
-              id: item.id || `featured-${index}`,
-              name: item.name || 'Item sin nombre',
-              description: item.description || 'Sin descripción disponible',
-              price: item.vbucks || item.price || 0,
-              rarity: {
-                value: item.rarity?.id || 'common',
-                displayValue: item.rarity?.name || 'Común',
-                backendValue: item.rarity?.id || 'Common'
-              },
-              images: {
-                icon: item.images?.icon || '/img/placeholder.webp',
-                featured: item.images?.featured || item.images?.icon
-              },
-              type: {
-                value: item.type?.id || 'outfit',
-                displayValue: item.type?.name || 'Skin',
-                backendValue: item.type?.id || 'AthenaCharacter'
-              }
-            });
+            featuredItems.push(shopItem);
           }
         } catch (error) {
           console.warn(`Error procesando item destacado ${index}:`, error);
@@ -572,11 +491,44 @@ const HomePage: React.FC = () => {
       });
     }
 
+    // Procesar items diarios
+    if (apiData.daily && apiData.daily.entries) {
+      apiData.daily.entries.forEach((entry: any, index: number) => {
+        try {
+          if (entry && entry.items && entry.items[0]) {
+            const item = entry.items[0];
+            const shopItem: FortniteItem = {
+              id: item.id || `daily-${index}`,
+              name: item.name || 'Item diario',
+              description: item.description || 'Sin descripción disponible',
+              price: entry.finalPrice || item.price || 0,
+              rarity: {
+                value: item.rarity?.value || 'common',
+                displayValue: item.rarity?.displayValue || 'Común',
+                backendValue: item.rarity?.backendValue || 'Common'
+              },
+              images: {
+                icon: item.images?.icon || '/img/placeholder.webp'
+              },
+              type: {
+                value: item.type?.value || 'outfit',
+                displayValue: item.type?.displayValue || 'Skin',
+                backendValue: item.type?.backendValue || 'AthenaCharacter'
+              }
+            };
+            dailyItems.push(shopItem);
+          }
+        } catch (error) {
+          console.warn(`Error procesando item diario ${index}:`, error);
+        }
+      });
+    }
+
     console.log(`✅ Procesados: ${dailyItems.length} items diarios, ${featuredItems.length} items destacados`);
 
     return {
-      daily: dailyItems.slice(0, 6), // Limitar a 6 items máximo
-      featured: featuredItems.slice(0, 8), // Limitar a 8 items máximo
+      daily: dailyItems.slice(0, 6),
+      featured: featuredItems.slice(0, 8),
       lastUpdate: new Date().toISOString()
     };
   };
@@ -622,6 +574,25 @@ const HomePage: React.FC = () => {
             displayValue: 'Mochila',
             backendValue: 'AthenaBackpack'
           }
+        },
+        {
+          id: 'mock-daily-3',
+          name: 'Hacha Legendaria',
+          description: 'Arma de filo con efectos especiales',
+          price: 1200,
+          rarity: {
+            value: 'epic',
+            displayValue: 'Épico',
+            backendValue: 'Epic'
+          },
+          images: {
+            icon: '/img/placeholder.webp'
+          },
+          type: {
+            value: 'pickaxe',
+            displayValue: 'Pico',
+            backendValue: 'AthenaPickaxe'
+          }
         }
       ],
       featured: [
@@ -661,6 +632,44 @@ const HomePage: React.FC = () => {
             value: 'bundle',
             displayValue: 'Bundle',
             backendValue: 'AthenaBundle'
+          }
+        },
+        {
+          id: 'mock-featured-3',
+          name: 'Ala de Búho Nocturno',
+          description: 'Ala delta con diseño nocturno',
+          price: 800,
+          rarity: {
+            value: 'rare',
+            displayValue: 'Raro',
+            backendValue: 'Rare'
+          },
+          images: {
+            icon: '/img/placeholder.webp'
+          },
+          type: {
+            value: 'glider',
+            displayValue: 'Ala delta',
+            backendValue: 'AthenaGlider'
+          }
+        },
+        {
+          id: 'mock-featured-4',
+          name: 'Emote Especial',
+          description: 'Baile exclusivo con efectos',
+          price: 500,
+          rarity: {
+            value: 'uncommon',
+            displayValue: 'Poco Común',
+            backendValue: 'Uncommon'
+          },
+          images: {
+            icon: '/img/placeholder.webp'
+          },
+          type: {
+            value: 'emote',
+            displayValue: 'Emote',
+            backendValue: 'AthenaDance'
           }
         }
       ],
@@ -792,11 +801,10 @@ const HomePage: React.FC = () => {
   // CORREGIDO: Cargar idioma preferido - Español por defecto
   useEffect(() => {
     const preferredLanguage = localStorage.getItem('preferredLanguage');
-    // FORZAR español como predeterminado si no hay preferencia guardada
     if (preferredLanguage) {
       setCurrentLanguage(preferredLanguage);
     } else {
-      setCurrentLanguage('es'); // Español por defecto
+      setCurrentLanguage('es');
       localStorage.setItem('preferredLanguage', 'es');
     }
   }, []);
@@ -1111,14 +1119,14 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* NUEVA SECCIÓN: TIENDA DE FORTNITE - MEJORADA */}
+      {/* SECCIÓN TIENDA FORTNITE - CORREGIDA */}
       {activeSection === 'fortnite-shop' && (
         <section className="section fortnite-shop-section">
           <div className="shop-header">
-            <h2>🎮 {t.fortniteShop}</h2>
+            <h2 className="neon-text">🎮 {t.fortniteShop}</h2>
             <div className="shop-controls">
               <button 
-                className="btn refresh-btn" 
+                className="btn neon-btn refresh-btn" 
                 onClick={fetchFortniteShop}
                 disabled={shopLoading}
               >
@@ -1144,7 +1152,7 @@ const HomePage: React.FC = () => {
           {shopError && !shopLoading && (
             <div className="shop-error">
               <p>❌ {shopError}</p>
-              <button className="btn" onClick={fetchFortniteShop}>
+              <button className="btn neon-btn" onClick={fetchFortniteShop}>
                 {t.tryAgain}
               </button>
             </div>
@@ -1155,16 +1163,16 @@ const HomePage: React.FC = () => {
             <div className="fortnite-shop">
               {/* Items Destacados */}
               <div className="shop-category">
-                <h3>⭐ {t.featuredItems}</h3>
+                <h3 className="neon-text">⭐ {t.featuredItems}</h3>
                 {fortniteShop.featured.length > 0 ? (
                   <div className="items-grid">
                     {fortniteShop.featured.map((item) => (
                       <div 
                         key={item.id} 
-                        className="shop-item"
+                        className="shop-item neon-card"
                         style={{ 
                           borderColor: getRarityColor(item.rarity.value),
-                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}20, transparent)`
+                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #1a1a2e)`
                         }}
                       >
                         <div className="item-image-container">
@@ -1176,6 +1184,7 @@ const HomePage: React.FC = () => {
                               (e.target as HTMLImageElement).src = '/img/placeholder.webp';
                             }}
                           />
+                          <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
                         </div>
                         <div className="item-info">
                           <h4 className="item-name">{item.name}</h4>
@@ -1183,16 +1192,19 @@ const HomePage: React.FC = () => {
                           <div className="item-details">
                             <span 
                               className="item-rarity"
-                              style={{ color: getRarityColor(item.rarity.value) }}
+                              style={{ 
+                                color: getRarityColor(item.rarity.value),
+                                textShadow: `0 0 10px ${getRarityColor(item.rarity.value)}`
+                              }}
                             >
                               {item.rarity.displayValue}
                             </span>
-                            <span className="item-price">
+                            <span className="item-price neon-text">
                               🪙 {item.price} {t.vBucks}
                             </span>
                           </div>
                           <button 
-                            className="btn item-buy-btn"
+                            className="btn neon-btn item-buy-btn"
                             onClick={() => contactWhatsApp(`Item de Fortnite: ${item.name} - ${item.price} Pavos`)}
                           >
                             {t.contactWhatsApp}
@@ -1210,16 +1222,16 @@ const HomePage: React.FC = () => {
 
               {/* Items Diarios */}
               <div className="shop-category">
-                <h3>📅 {t.dailyItems}</h3>
+                <h3 className="neon-text">📅 {t.dailyItems}</h3>
                 {fortniteShop.daily.length > 0 ? (
                   <div className="items-grid">
                     {fortniteShop.daily.map((item) => (
                       <div 
                         key={item.id} 
-                        className="shop-item"
+                        className="shop-item neon-card"
                         style={{ 
                           borderColor: getRarityColor(item.rarity.value),
-                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}20, transparent)`
+                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #1a1a2e)`
                         }}
                       >
                         <div className="item-image-container">
@@ -1231,6 +1243,7 @@ const HomePage: React.FC = () => {
                               (e.target as HTMLImageElement).src = '/img/placeholder.webp';
                             }}
                           />
+                          <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
                         </div>
                         <div className="item-info">
                           <h4 className="item-name">{item.name}</h4>
@@ -1238,16 +1251,19 @@ const HomePage: React.FC = () => {
                           <div className="item-details">
                             <span 
                               className="item-rarity"
-                              style={{ color: getRarityColor(item.rarity.value) }}
+                              style={{ 
+                                color: getRarityColor(item.rarity.value),
+                                textShadow: `0 0 10px ${getRarityColor(item.rarity.value)}`
+                              }}
                             >
                               {item.rarity.displayValue}
                             </span>
-                            <span className="item-price">
+                            <span className="item-price neon-text">
                               🪙 {item.price} {t.vBucks}
                             </span>
                           </div>
                           <button 
-                            className="btn item-buy-btn"
+                            className="btn neon-btn item-buy-btn"
                             onClick={() => contactWhatsApp(`Item de Fortnite: ${item.name} - ${item.price} Pavos`)}
                           >
                             {t.contactWhatsApp}
@@ -1270,7 +1286,7 @@ const HomePage: React.FC = () => {
       {/* Modal de producto ampliado */}
       {selectedProduct && (
         <div className="product-modal-overlay" onClick={closeProductModal}>
-          <div className="product-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="product-modal neon-card" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close-btn" onClick={closeProductModal}>
               ✕
             </button>
@@ -1287,7 +1303,7 @@ const HomePage: React.FC = () => {
                     </p>
                   ))}
                 </div>
-                <button className="btn modal-contact-btn" onClick={() => contactWhatsApp(selectedProduct.name)}>
+                <button className="btn neon-btn modal-contact-btn" onClick={() => contactWhatsApp(selectedProduct.name)}>
                   {t.contactWhatsApp}
                 </button>
               </div>
@@ -1299,37 +1315,37 @@ const HomePage: React.FC = () => {
       {/* Sección Payments */}
       {activeSection === 'payments' && (
         <section className="section">
-          <h2>{t.paymentMethods}</h2>
+          <h2 className="neon-text">{t.paymentMethods}</h2>
           <div className="payments-grid">
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>💳</div>
               <h4>{t.creditCard}</h4>
             </div>
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>💳</div>
               <h4>{t.debitCard}</h4>
             </div>
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>📱</div>
               <h4>{t.mercadoPago}</h4>
             </div>
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>📱</div>
               <h4>{t.daviPlata}</h4>
             </div>
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>📱</div>
               <h4>{t.nequi}</h4>
             </div>
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>📱</div>
               <h4>{t.yape}</h4>
             </div>
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>📱</div>
               <h4>{t.pagoMovil}</h4>
             </div>
-            <div className="payment-method">
+            <div className="payment-method neon-card">
               <div>💰</div>
               <h4>{t.cashApp}</h4>
             </div>
@@ -1340,24 +1356,24 @@ const HomePage: React.FC = () => {
       {/* Sección Contact */}
       {activeSection === 'contact' && (
         <section className="section">
-          <h2>{t.contactUs}</h2>
-          <div className="contact">
+          <h2 className="neon-text">{t.contactUs}</h2>
+          <div className="contact neon-card">
             <p>{t.email}: info@franvbucks.com</p>
             <p>{t.phone}: +1 (555) 123-4567</p>
             <p>{t.address}: 123 Gaming Street, Fortnite City</p>
           </div>
           
-          <div className="social-media">
+          <div className="social-media neon-card">
             <h3>{t.followUs}</h3>
-            <a href="https://instagram.com/yourusername"> Instagram</a>
-            <a href="https://facebook.com/yourusername"> Facebook</a>
+            <a href="https://instagram.com/yourusername" className="neon-link"> Instagram</a>
+            <a href="https://facebook.com/yourusername" className="neon-link"> Facebook</a>
           </div>
         </section>
       )}
 
       <footer className="footer">
         <div className="visit-counter">
-          <p>{t.visits}: <span>{visitCount}</span></p>
+          <p>{t.visits}: <span className="neon-text">{visitCount}</span></p>
         </div>
         <p>&copy; 2025 Pavos Fran. {t.allRightsReserved}</p>
       </footer>
