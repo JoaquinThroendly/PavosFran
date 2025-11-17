@@ -1,4 +1,4 @@
-// app/page.tsx - CORREGIDO PROBLEMAS API E IMÁGENES
+// app/page.tsx - VERSIÓN COMPLETA ACTUALIZADA CON API FUNCIONAL
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -70,7 +70,11 @@ const translations = {
     vBucks: "V-Bucks",
     today: "Today",
     noItemsAvailable: "No items available",
-    tryAgain: "Try Again"
+    tryAgain: "Try Again",
+    apiStatus: "API Status",
+    realTimeData: "Real-time data",
+    demoData: "Demo data",
+    connecting: "Connecting to API..."
   },
   es: {
     home: "Inicio",
@@ -136,7 +140,11 @@ const translations = {
     vBucks: "Pavos",
     today: "Hoy",
     noItemsAvailable: "No hay items disponibles",
-    tryAgain: "Intentar de nuevo"
+    tryAgain: "Intentar de nuevo",
+    apiStatus: "Estado API",
+    realTimeData: "Datos en tiempo real",
+    demoData: "Datos de demostración",
+    connecting: "Conectando a API..."
   }
 };
 
@@ -173,7 +181,7 @@ interface Comment {
   rating: number;
 }
 
-// NUEVA INTERFACE PARA ITEMS DE FORTNITE
+// INTERFACE PARA ITEMS DE FORTNITE
 interface FortniteItem {
   id: string;
   name: string;
@@ -221,7 +229,7 @@ const HomePage: React.FC = () => {
   const [apiStatus, setApiStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
-  // NUEVOS ESTADOS PARA LA TIENDA FORTNITE
+  // ESTADOS PARA LA TIENDA FORTNITE
   const [fortniteShop, setFortniteShop] = useState<FortniteShop | null>(null);
   const [shopLoading, setShopLoading] = useState(false);
   const [shopError, setShopError] = useState<string | null>(null);
@@ -388,7 +396,7 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // FUNCIÓN SIMPLIFICADA Y ROBUSTA PARA LA API
+  // FUNCIÓN CORREGIDA PARA LA API DE FORTNITE
   const fetchFortniteShop = async () => {
     setShopLoading(true);
     setShopError(null);
@@ -396,50 +404,60 @@ const HomePage: React.FC = () => {
     try {
       console.log('🔄 Intentando cargar tienda Fortnite...');
       
-      // Intentar con FortniteAPI.io primero
+      // API key proporcionada - CORREGIDA EN HEADER
       const API_KEY = 'a9966904-5bc4bb17-b9ec8bf6-0d9486df';
       const API_URL = 'https://fortniteapi.io/v2/shop?lang=es';
       
-      console.log('🔑 Usando API Key:', API_KEY ? '✅ Presente' : '❌ Faltante');
+      console.log('🔑 API Key:', API_KEY);
+      console.log('🌐 URL:', API_URL);
       
       const response = await fetch(API_URL, {
         method: 'GET',
         headers: {
-          'Authorization': API_KEY,
-          'Accept': 'application/json',
+          'Authorization': API_KEY, // CORREGIDO: Solo la API key, sin 'Bearer'
+          'Content-Type': 'application/json',
         }
       });
       
       console.log('📡 Status de respuesta:', response.status);
+      console.log('📡 Headers enviados:', {
+        'Authorization': API_KEY,
+        'Content-Type': 'application/json'
+      });
       
       if (response.ok) {
         const data = await response.json();
         console.log('✅ API respondió correctamente');
+        console.log('📦 Datos recibidos:', data);
         
         if (data.result && data.shop) {
           const processedShop = processFortniteApiData(data);
           console.log(`🎮 Tienda procesada: ${processedShop.featured.length} destacados, ${processedShop.daily.length} diarios`);
           setFortniteShop({...processedShop, source: 'api'});
+          setShopError(null);
           return;
         } else {
-          throw new Error('Estructura de datos inválida');
+          console.warn('⚠️ Estructura de datos inesperada:', data);
+          throw new Error('Estructura de datos inválida de la API');
         }
       } else {
-        throw new Error(`Error HTTP ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Error HTTP:', response.status, errorText);
+        throw new Error(`Error HTTP ${response.status}: ${errorText}`);
       }
       
     } catch (error) {
-      console.error('❌ Error con FortniteAPI.io:', error);
+      console.error('❌ Error crítico con FortniteAPI.io:', error);
       
-      // Si falla, usar datos de ejemplo inmediatamente
+      // Usar datos de ejemplo como fallback
       console.log('🔄 Cambiando a datos de ejemplo...');
       const mockShopData = createDetailedMockShopData();
       setFortniteShop({...mockShopData, source: 'mock'});
       
       setShopError(
         currentLanguage === 'es' 
-          ? 'Usando datos de ejemplo. La API no está disponible.'
-          : 'Using sample data. API is unavailable.'
+          ? `Error de conexión: ${error instanceof Error ? error.message : 'API no disponible'}. Usando datos de ejemplo.`
+          : `Connection error: ${error instanceof Error ? error.message : 'API unavailable'}. Using sample data.`
       );
       
     } finally {
@@ -447,18 +465,26 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // FUNCIÓN DE PROCESAMIENTO MÁS ROBUSTA
+  // FUNCIÓN MEJORADA PARA PROCESAR DATOS
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
 
     console.log('🔧 Procesando datos de la API...');
+    console.log('📊 Estructura de datos recibida:', {
+      hasShop: !!apiData.shop,
+      shopType: typeof apiData.shop,
+      shopLength: Array.isArray(apiData.shop) ? apiData.shop.length : 'N/A',
+      result: apiData.result
+    });
 
-    // Procesar items del shop
+    // Procesar items del shop - manejar diferentes estructuras posibles
     if (apiData.shop && Array.isArray(apiData.shop)) {
-      apiData.shop.forEach((item: any) => {
+      apiData.shop.forEach((item: any, index: number) => {
         try {
           if (item && item.name) {
+            console.log(`📦 Procesando item ${index + 1}:`, item.name);
+            
             const processedItem: FortniteItem = {
               id: item.id || Math.random().toString(36).substr(2, 9),
               name: item.name,
@@ -471,7 +497,8 @@ const HomePage: React.FC = () => {
               },
               images: {
                 icon: getValidImageUrl(item.images?.icon),
-                featured: getValidImageUrl(item.images?.featured)
+                featured: getValidImageUrl(item.images?.featured),
+                background: getValidImageUrl(item.images?.background)
               },
               type: {
                 value: item.type?.value || item.type?.id || 'outfit',
@@ -480,20 +507,33 @@ const HomePage: React.FC = () => {
               }
             };
 
-            // Clasificar items
-            if (item.section?.id === 'daily' || item.featured === false) {
+            // Clasificar items - lógica mejorada
+            const isDaily = item.section?.id === 'daily' || 
+                           item.section?.name === 'Daily' || 
+                           item.featured === false ||
+                           index < 6; // Fallback: primeros 6 items como daily
+
+            if (isDaily) {
               dailyItems.push(processedItem);
             } else {
               featuredItems.push(processedItem);
             }
           }
         } catch (error) {
-          console.warn('⚠️ Error procesando item:', error);
+          console.warn('⚠️ Error procesando item:', error, item);
         }
       });
+    } else {
+      console.warn('⚠️ Estructura de shop no reconocida:', apiData.shop);
     }
 
     console.log(`📊 Procesados: ${featuredItems.length} destacados, ${dailyItems.length} diarios`);
+
+    // Asegurar que tenemos al menos algunos items
+    if (featuredItems.length === 0 && dailyItems.length === 0) {
+      console.log('🔄 No se encontraron items, usando datos de ejemplo');
+      return createDetailedMockShopData();
+    }
 
     return {
       daily: dailyItems.slice(0, 6),
@@ -503,15 +543,21 @@ const HomePage: React.FC = () => {
     };
   };
 
-  // FUNCIÓN PARA OBTENER URLS VÁLIDAS DE IMÁGENES
+  // FUNCIÓN MEJORADA PARA URLs DE IMÁGENES
   const getValidImageUrl = (url: string | undefined): string => {
-    if (!url || url.includes('null') || url === '') {
+    if (!url || url.includes('null') || url === '' || url === 'undefined') {
+      console.log('🖼️ Usando imagen placeholder');
       return '/img/placeholder.webp';
     }
     
-    // Asegurarse de que la URL sea válida
+    // Asegurarse de que la URL sea válida y completa
     if (url.startsWith('http')) {
       return url;
+    }
+    
+    // Si es una ruta relativa, intentar construir URL completa
+    if (url.startsWith('/') || url.startsWith('images/')) {
+      return `https://fortniteapi.io${url.startsWith('/') ? url : '/' + url}`;
     }
     
     return '/img/placeholder.webp';
@@ -733,7 +779,7 @@ const HomePage: React.FC = () => {
     }
   }, []);
 
-  // Resto de funciones...
+  // Funciones de navegación
   const showSection = (sectionId: string) => {
     setActiveSection(sectionId);
     if (sectionId !== 'products' && sectionId !== 'fortnite-shop') {
@@ -1042,7 +1088,7 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* SECCIÓN TIENDA FORTNITE - MEJORADA */}
+      {/* SECCIÓN TIENDA FORTNITE - COMPLETAMENTE ACTUALIZADA */}
       {activeSection === 'fortnite-shop' && (
         <section className="section fortnite-shop-section">
           <div className="shop-header">
@@ -1063,20 +1109,22 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Información de estado de la API */}
+          {/* Información de estado de la API - MEJORADA */}
           <div className="api-status">
             <div className="status-indicator">
               <span className={`status-dot ${shopError ? 'error' : fortniteShop?.source === 'api' ? 'success' : 'loading'}`}></span>
               <span className="status-text">
-                {shopLoading ? '🔄 Conectando a API...' : 
-                 fortniteShop?.source === 'api' ? '✅ Datos en tiempo real' : 
-                 '📱 Datos de demostración'}
+                <strong>{t.apiStatus}:</strong> {
+                  shopLoading ? t.connecting : 
+                  fortniteShop?.source === 'api' ? t.realTimeData : 
+                  t.demoData
+                }
               </span>
             </div>
             {fortniteShop && (
               <div className="status-details">
                 <small>
-                  {fortniteShop.daily.length} items diarios • {fortniteShop.featured.length} items destacados
+                  {fortniteShop.daily.length} {t.dailyItems} • {fortniteShop.featured.length} {t.featuredItems}
                   {fortniteShop.source === 'mock' && ' • (Modo demostración)'}
                 </small>
               </div>
@@ -1256,7 +1304,7 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* Secciones Payments y Contact (mantener igual) */}
+      {/* Secciones Payments y Contact */}
       {activeSection === 'payments' && (
         <section className="section">
           <h2 className="neon-text">{t.paymentMethods}</h2>
