@@ -1,4 +1,4 @@
-// app/page.tsx - VERSIÓN COMPLETA ACTUALIZADA CON API FUNCIONAL
+// app/page.tsx - VERSIÓN COMPLETA ACTUALIZADA CON BACKEND PROXY
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -396,61 +396,53 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // FUNCIÓN CORREGIDA PARA LA API DE FORTNITE
+  // 🔄 FUNCIÓN ACTUALIZADA - USA BACKEND PROXY
   const fetchFortniteShop = async () => {
     setShopLoading(true);
     setShopError(null);
     
     try {
-      console.log('🔄 Intentando cargar tienda Fortnite...');
+      console.log('🔄 Fetching Fortnite shop via backend API...');
       
-      // API key proporcionada - CORREGIDA EN HEADER
-      const API_KEY = 'a9966904-5bc4bb17-b9ec8bf6-0d9486df';
-      const API_URL = 'https://fortniteapi.io/v2/shop?lang=es';
-      
-      console.log('🔑 API Key:', API_KEY);
-      console.log('🌐 URL:', API_URL);
-      
-      const response = await fetch(API_URL, {
+      // Usar nuestra API route en lugar de FortniteAPI.io directamente
+      const response = await fetch('/api/fortnite-shop', {
         method: 'GET',
         headers: {
-          'Authorization': API_KEY, // CORREGIDO: Solo la API key, sin 'Bearer'
           'Content-Type': 'application/json',
-        }
+        },
       });
-      
-      console.log('📡 Status de respuesta:', response.status);
-      console.log('📡 Headers enviados:', {
-        'Authorization': API_KEY,
-        'Content-Type': 'application/json'
-      });
-      
+
+      console.log('📡 Backend API status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ API respondió correctamente');
-        console.log('📦 Datos recibidos:', data);
+        console.log('✅ Backend API responded successfully');
         
-        if (data.result && data.shop) {
+        // Verificar si hay error en la respuesta
+        if (data.error) {
+          throw new Error(data.error);
+        }
+
+        // Validar estructura de datos
+        if (data.shop && Array.isArray(data.shop)) {
           const processedShop = processFortniteApiData(data);
-          console.log(`🎮 Tienda procesada: ${processedShop.featured.length} destacados, ${processedShop.daily.length} diarios`);
+          console.log(`🎮 Shop processed: ${processedShop.featured.length} featured, ${processedShop.daily.length} daily`);
           setFortniteShop({...processedShop, source: 'api'});
           setShopError(null);
           return;
         } else {
-          console.warn('⚠️ Estructura de datos inesperada:', data);
-          throw new Error('Estructura de datos inválida de la API');
+          throw new Error('Invalid data structure from backend');
         }
       } else {
-        const errorText = await response.text();
-        console.error('❌ Error HTTP:', response.status, errorText);
-        throw new Error(`Error HTTP ${response.status}: ${errorText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}`);
       }
       
     } catch (error) {
-      console.error('❌ Error crítico con FortniteAPI.io:', error);
+      console.error('❌ Error with backend API:', error);
       
-      // Usar datos de ejemplo como fallback
-      console.log('🔄 Cambiando a datos de ejemplo...');
+      // Fallback a datos de ejemplo
+      console.log('🔄 Switching to sample data...');
       const mockShopData = createDetailedMockShopData();
       setFortniteShop({...mockShopData, source: 'mock'});
       
@@ -465,34 +457,32 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // FUNCIÓN MEJORADA PARA PROCESAR DATOS
+  // 🔧 FUNCIÓN MEJORADA DE PROCESAMIENTO
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
 
-    console.log('🔧 Procesando datos de la API...');
-    console.log('📊 Estructura de datos recibida:', {
+    console.log('🔧 Processing API data...');
+    console.log('📊 Data structure received:', {
       hasShop: !!apiData.shop,
       shopType: typeof apiData.shop,
       shopLength: Array.isArray(apiData.shop) ? apiData.shop.length : 'N/A',
       result: apiData.result
     });
 
-    // Procesar items del shop - manejar diferentes estructuras posibles
     if (apiData.shop && Array.isArray(apiData.shop)) {
-      apiData.shop.forEach((item: any, index: number) => {
+      apiData.shop.forEach((item: any) => {
         try {
-          if (item && item.name) {
-            console.log(`📦 Procesando item ${index + 1}:`, item.name);
-            
+          // Filtrar solo items que queremos mostrar (con nombre e imagen)
+          if (item && item.name && item.images?.icon) {
             const processedItem: FortniteItem = {
               id: item.id || Math.random().toString(36).substr(2, 9),
               name: item.name,
-              description: item.description || 'Item de Fortnite',
-              price: item.price || item.finalPrice || item.regularPrice || 0,
+              description: item.description || 'Fortnite Item',
+              price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
               rarity: {
                 value: item.rarity?.id || item.rarity?.value || 'common',
-                displayValue: item.rarity?.name || item.rarity?.displayValue || 'Común',
+                displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
                 backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
               },
               images: {
@@ -507,37 +497,37 @@ const HomePage: React.FC = () => {
               }
             };
 
-            // Clasificar items - lógica mejorada
-            const isDaily = item.section?.id === 'daily' || 
-                           item.section?.name === 'Daily' || 
-                           item.featured === false ||
-                           index < 6; // Fallback: primeros 6 items como daily
+            // Mejor lógica para clasificar items
+            const isFeatured = item.section?.id === 'featured' || 
+                             item.featured === true ||
+                             item.section?.name?.toLowerCase().includes('featured') ||
+                             item.displayGroup === 'Featured';
 
-            if (isDaily) {
-              dailyItems.push(processedItem);
-            } else {
+            if (isFeatured) {
               featuredItems.push(processedItem);
+            } else {
+              dailyItems.push(processedItem);
             }
           }
         } catch (error) {
-          console.warn('⚠️ Error procesando item:', error, item);
+          console.warn('⚠️ Error processing item:', error, item);
         }
       });
     } else {
-      console.warn('⚠️ Estructura de shop no reconocida:', apiData.shop);
+      console.warn('⚠️ Shop structure not recognized:', apiData.shop);
     }
 
-    console.log(`📊 Procesados: ${featuredItems.length} destacados, ${dailyItems.length} diarios`);
+    console.log(`📊 Processed: ${featuredItems.length} featured, ${dailyItems.length} daily`);
 
     // Asegurar que tenemos al menos algunos items
     if (featuredItems.length === 0 && dailyItems.length === 0) {
-      console.log('🔄 No se encontraron items, usando datos de ejemplo');
+      console.log('🔄 No items found, using sample data');
       return createDetailedMockShopData();
     }
 
     return {
-      daily: dailyItems.slice(0, 6),
-      featured: featuredItems.slice(0, 8),
+      daily: dailyItems.slice(0, 8), // Más items diarios
+      featured: featuredItems.slice(0, 12), // Más items destacados
       lastUpdate: new Date().toISOString(),
       source: 'api'
     };
@@ -546,7 +536,7 @@ const HomePage: React.FC = () => {
   // FUNCIÓN MEJORADA PARA URLs DE IMÁGENES
   const getValidImageUrl = (url: string | undefined): string => {
     if (!url || url.includes('null') || url === '' || url === 'undefined') {
-      console.log('🖼️ Usando imagen placeholder');
+      console.log('🖼️ Using image placeholder');
       return '/img/placeholder.webp';
     }
     
@@ -637,12 +627,30 @@ const HomePage: React.FC = () => {
         rarity: { value: 'epic', displayValue: 'Épica', backendValue: 'Epic' },
         images: { icon: '/img/placeholder.webp' },
         type: { value: 'glider', displayValue: 'Ala Delta', backendValue: 'AthenaGlider' }
+      },
+      {
+        id: 'mock-9',
+        name: 'Shadow Assassin',
+        description: 'Skin sigilosa con efectos oscuros',
+        price: 1200,
+        rarity: { value: 'epic', displayValue: 'Épica', backendValue: 'Epic' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
+      },
+      {
+        id: 'mock-10',
+        name: 'Lava Axe',
+        description: 'Hacha con lava fluyendo',
+        price: 800,
+        rarity: { value: 'rare', displayValue: 'Rara', backendValue: 'Rare' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'pickaxe', displayValue: 'Pico', backendValue: 'AthenaPickaxe' }
       }
     ];
 
     return {
-      daily: mockItems.slice(0, 4),
-      featured: mockItems.slice(2),
+      daily: mockItems.slice(0, 6),
+      featured: mockItems.slice(3),
       lastUpdate: new Date().toISOString(),
       source: 'mock'
     };
