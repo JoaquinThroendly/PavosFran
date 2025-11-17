@@ -1,4 +1,4 @@
-// app/page.tsx - CORREGIDO COMPLETO
+// app/page.tsx - ACTUALIZADO CON FORTNITEAPI.IO CORREGIDO
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -389,7 +389,7 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // FUNCIÓN SIMPLIFICADA PARA CARGAR LA TIENDA FORTNITE
+  // FUNCIÓN CORREGIDA PARA FORTNITEAPI.IO
   const fetchFortniteShop = async () => {
     setShopLoading(true);
     setShopError(null);
@@ -397,30 +397,41 @@ const HomePage: React.FC = () => {
     try {
       console.log('🔍 Iniciando carga de la tienda Fortnite...');
       
-      // Usar API pública sin key primero para probar
-      const API_URL = 'https://fortnite-api.com/v2/shop/br';
+      // TU API KEY DE FORTNITEAPI.IO
+      const API_KEY = 'a9966904-5bc4bb17-b9ec8bf6-0d9486df';
+      const API_URL = 'https://fortniteapi.io/v2/shop?lang=es';
+      
+      console.log('📡 Conectando a FortniteAPI.io...');
       
       const response = await fetch(API_URL, {
         method: 'GET',
         headers: {
+          'Authorization': API_KEY,
           'Accept': 'application/json',
         }
       });
       
+      console.log('📊 Respuesta HTTP:', response.status, response.statusText);
+      
+      if (response.status === 401) {
+        throw new Error('API Key inválida o expirada. Verifica tu clave de FortniteAPI.io');
+      }
+      
       if (!response.ok) {
-        throw new Error(`Error HTTP! estado: ${response.status}`);
+        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
       }
       
       const data = await response.json();
-      console.log('📦 Datos recibidos de Fortnite API:', data);
+      console.log('📦 Datos recibidos de FortniteAPI.io:', data);
       
-      if (data.data) {
-        const processedShop = processFortniteApiData(data.data);
-        console.log('✅ Tienda procesada correctamente:', processedShop);
+      if (data.result) {
+        const processedShop = processFortniteApiData(data);
+        console.log('✅ Tienda procesada correctamente desde FortniteAPI.io');
         setFortniteShop(processedShop);
       } else {
-        throw new Error('No se encontraron datos en la respuesta');
+        throw new Error(data.error || 'Error en la respuesta de la API');
       }
+      
     } catch (error) {
       console.error('❌ Error cargando tienda Fortnite:', error);
       
@@ -428,9 +439,13 @@ const HomePage: React.FC = () => {
       
       if (error instanceof Error) {
         if (error.message.includes('Failed to fetch')) {
-          errorMessage = currentLanguage === 'es'
+          errorMessage = currentLanguage === 'es' 
             ? 'Error de conexión. Verifica tu internet.'
             : 'Connection error. Check your internet.';
+        } else if (error.message.includes('401') || error.message.includes('API Key')) {
+          errorMessage = currentLanguage === 'es'
+            ? 'Error de autenticación. La API Key puede ser inválida o haber expirado.'
+            : 'Authentication error. API Key may be invalid or expired.';
         } else if (error.message.includes('429')) {
           errorMessage = currentLanguage === 'es'
             ? 'Límite de requests excedido. Intenta en unos minutos.'
@@ -442,36 +457,106 @@ const HomePage: React.FC = () => {
       
       setShopError(errorMessage);
       
-      // Usar datos de ejemplo como respaldo
-      const mockShopData = createMockShopData();
+      // Cargar datos de ejemplo como respaldo
+      console.log('🔄 Cargando datos de ejemplo...');
+      const mockShopData = createDetailedMockShopData();
       setFortniteShop(mockShopData);
+      
     } finally {
       setShopLoading(false);
     }
   };
 
-  // FUNCIÓN SIMPLIFICADA PARA PROCESAR DATOS
+  // FUNCIÓN MEJORADA PARA PROCESAR DATOS DE FORTNITEAPI.IO
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
 
-    console.log('🔄 Procesando datos de la API...', apiData);
+    console.log('🔄 Procesando datos de FortniteAPI.io...', apiData);
 
-    // Procesar items destacados
-    if (apiData.featured && apiData.featured.entries) {
-      apiData.featured.entries.forEach((entry: any, index: number) => {
+    // FortniteAPI.io tiene una estructura específica
+    if (apiData.shop && Array.isArray(apiData.shop)) {
+      apiData.shop.forEach((item: any) => {
         try {
-          if (entry && entry.items && entry.items[0]) {
-            const item = entry.items[0];
+          if (item && item.name) {
             const shopItem: FortniteItem = {
-              id: item.id || `featured-${index}`,
-              name: item.name || 'Item destacado',
+              id: item.id || Math.random().toString(),
+              name: item.name,
               description: item.description || 'Sin descripción disponible',
-              price: entry.finalPrice || item.price || 0,
+              price: item.price || item.vbucks || 0,
               rarity: {
-                value: item.rarity?.value || 'common',
-                displayValue: item.rarity?.displayValue || 'Común',
-                backendValue: item.rarity?.backendValue || 'Common'
+                value: item.rarity?.id || item.rarity?.value || 'common',
+                displayValue: item.rarity?.name || item.rarity?.displayValue || 'Común',
+                backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
+              },
+              images: {
+                icon: item.images?.icon || item.images?.featured || '/img/placeholder.webp',
+                featured: item.images?.featured || item.images?.icon
+              },
+              type: {
+                value: item.type?.value || item.type?.id || 'outfit',
+                displayValue: item.type?.displayValue || item.type?.name || 'Skin',
+                backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
+              }
+            };
+
+            // Determinar si es daily o featured
+            if (item.section?.id === 'daily' || item.featured === false) {
+              dailyItems.push(shopItem);
+            } else {
+              featuredItems.push(shopItem);
+            }
+          }
+        } catch (error) {
+          console.warn('Error procesando item:', error);
+        }
+      });
+    }
+
+    // Si no hay datos en shop, buscar en secciones específicas
+    if (apiData.daily && Array.isArray(apiData.daily)) {
+      apiData.daily.forEach((item: any) => {
+        try {
+          if (item && item.name) {
+            dailyItems.push({
+              id: item.id || Math.random().toString(),
+              name: item.name,
+              description: item.description || 'Item diario',
+              price: item.price || item.vbucks || 0,
+              rarity: {
+                value: item.rarity?.id || 'common',
+                displayValue: item.rarity?.name || 'Común',
+                backendValue: item.rarity?.id || 'Common'
+              },
+              images: {
+                icon: item.images?.icon || '/img/placeholder.webp'
+              },
+              type: {
+                value: item.type?.value || 'outfit',
+                displayValue: item.type?.displayValue || 'Skin',
+                backendValue: item.type?.backendValue || 'AthenaCharacter'
+              }
+            });
+          }
+        } catch (error) {
+          console.warn('Error procesando item diario:', error);
+        }
+      });
+    }
+
+    if (apiData.featured && Array.isArray(apiData.featured)) {
+      apiData.featured.forEach((item: any) => {
+        try {
+          if (item && item.name) {
+            featuredItems.push({
+              id: item.id || Math.random().toString(),
+              name: item.name,
+              description: item.description || 'Item destacado',
+              price: item.price || item.vbucks || 0,
+              rarity: {
+                value: item.rarity?.id || 'epic',
+                displayValue: item.rarity?.name || 'Épico',
+                backendValue: item.rarity?.id || 'Epic'
               },
               images: {
                 icon: item.images?.icon || '/img/placeholder.webp',
@@ -482,197 +567,103 @@ const HomePage: React.FC = () => {
                 displayValue: item.type?.displayValue || 'Skin',
                 backendValue: item.type?.backendValue || 'AthenaCharacter'
               }
-            };
-            featuredItems.push(shopItem);
+            });
           }
         } catch (error) {
-          console.warn(`Error procesando item destacado ${index}:`, error);
+          console.warn('Error procesando item destacado:', error);
         }
       });
     }
 
-    // Procesar items diarios
-    if (apiData.daily && apiData.daily.entries) {
-      apiData.daily.entries.forEach((entry: any, index: number) => {
-        try {
-          if (entry && entry.items && entry.items[0]) {
-            const item = entry.items[0];
-            const shopItem: FortniteItem = {
-              id: item.id || `daily-${index}`,
-              name: item.name || 'Item diario',
-              description: item.description || 'Sin descripción disponible',
-              price: entry.finalPrice || item.price || 0,
-              rarity: {
-                value: item.rarity?.value || 'common',
-                displayValue: item.rarity?.displayValue || 'Común',
-                backendValue: item.rarity?.backendValue || 'Common'
-              },
-              images: {
-                icon: item.images?.icon || '/img/placeholder.webp'
-              },
-              type: {
-                value: item.type?.value || 'outfit',
-                displayValue: item.type?.displayValue || 'Skin',
-                backendValue: item.type?.backendValue || 'AthenaCharacter'
-              }
-            };
-            dailyItems.push(shopItem);
-          }
-        } catch (error) {
-          console.warn(`Error procesando item diario ${index}:`, error);
-        }
-      });
-    }
-
-    console.log(`✅ Procesados: ${dailyItems.length} items diarios, ${featuredItems.length} items destacados`);
+    console.log(`✅ Procesados: ${dailyItems.length} diarios, ${featuredItems.length} destacados`);
 
     return {
-      daily: dailyItems.slice(0, 6),
-      featured: featuredItems.slice(0, 8),
+      daily: dailyItems.slice(0, 8),
+      featured: featuredItems.slice(0, 12),
       lastUpdate: new Date().toISOString()
     };
   };
 
-  // FUNCIÓN PARA DATOS DE EJEMPLO
-  const createMockShopData = (): FortniteShop => {
+  // FUNCIÓN MEJORADA PARA DATOS DE EJEMPLO
+  const createDetailedMockShopData = (): FortniteShop => {
+    const mockItems = [
+      {
+        id: 'mock-1',
+        name: 'Renegade Raider',
+        description: 'Una skin clásica y rara de Fortnite',
+        price: 1500,
+        rarity: { value: 'rare', displayValue: 'Rara', backendValue: 'Rare' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
+      },
+      {
+        id: 'mock-2', 
+        name: 'Galaxy Scout',
+        description: 'Skin exclusiva con temática espacial',
+        price: 2000,
+        rarity: { value: 'legendary', displayValue: 'Legendaria', backendValue: 'Legendary' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
+      },
+      {
+        id: 'mock-3',
+        name: 'Cobra Pickaxe',
+        description: 'Pico con diseño de serpiente',
+        price: 800,
+        rarity: { value: 'epic', displayValue: 'Épica', backendValue: 'Epic' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'pickaxe', displayValue: 'Pico', backendValue: 'AthenaPickaxe' }
+      },
+      {
+        id: 'mock-4',
+        name: 'Dragon Glider',
+        description: 'Ala delta con efectos de dragón',
+        price: 1200,
+        rarity: { value: 'legendary', displayValue: 'Legendaria', backendValue: 'Legendary' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'glider', displayValue: 'Ala Delta', backendValue: 'AthenaGlider' }
+      },
+      {
+        id: 'mock-5',
+        name: 'Star Power Emote',
+        description: 'Baile exclusivo con efectos estelares',
+        price: 500,
+        rarity: { value: 'epic', displayValue: 'Épica', backendValue: 'Epic' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'emote', displayValue: 'Emote', backendValue: 'AthenaDance' }
+      },
+      {
+        id: 'mock-6',
+        name: 'Tech Backpack',
+        description: 'Mochila con diseño futurista',
+        price: 600,
+        rarity: { value: 'rare', displayValue: 'Rara', backendValue: 'Rare' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'backpack', displayValue: 'Mochila', backendValue: 'AthenaBackpack' }
+      },
+      {
+        id: 'mock-7',
+        name: 'Ice Queen',
+        description: 'Skin legendaria con poderes de hielo',
+        price: 1800,
+        rarity: { value: 'legendary', displayValue: 'Legendaria', backendValue: 'Legendary' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
+      },
+      {
+        id: 'mock-8',
+        name: 'Neon Wings',
+        description: 'Alas con efectos neon brillantes',
+        price: 1500,
+        rarity: { value: 'epic', displayValue: 'Épica', backendValue: 'Epic' },
+        images: { icon: '/img/placeholder.webp' },
+        type: { value: 'glider', displayValue: 'Ala Delta', backendValue: 'AthenaGlider' }
+      }
+    ];
+
     return {
-      daily: [
-        {
-          id: 'mock-daily-1',
-          name: 'Cazador Élite',
-          description: 'Un cazador experimentado listo para la batalla',
-          price: 800,
-          rarity: {
-            value: 'rare',
-            displayValue: 'Raro',
-            backendValue: 'Rare'
-          },
-          images: {
-            icon: '/img/placeholder.webp'
-          },
-          type: {
-            value: 'outfit',
-            displayValue: 'Skin',
-            backendValue: 'AthenaCharacter'
-          }
-        },
-        {
-          id: 'mock-daily-2',
-          name: 'Alas de Fénix',
-          description: 'Mochila cohete con diseño de fénix',
-          price: 500,
-          rarity: {
-            value: 'uncommon',
-            displayValue: 'Poco Común',
-            backendValue: 'Uncommon'
-          },
-          images: {
-            icon: '/img/placeholder.webp'
-          },
-          type: {
-            value: 'backpack',
-            displayValue: 'Mochila',
-            backendValue: 'AthenaBackpack'
-          }
-        },
-        {
-          id: 'mock-daily-3',
-          name: 'Hacha Legendaria',
-          description: 'Arma de filo con efectos especiales',
-          price: 1200,
-          rarity: {
-            value: 'epic',
-            displayValue: 'Épico',
-            backendValue: 'Epic'
-          },
-          images: {
-            icon: '/img/placeholder.webp'
-          },
-          type: {
-            value: 'pickaxe',
-            displayValue: 'Pico',
-            backendValue: 'AthenaPickaxe'
-          }
-        }
-      ],
-      featured: [
-        {
-          id: 'mock-featured-1',
-          name: 'Dragón Legendario',
-          description: 'Skin legendaria con efectos de dragón',
-          price: 2000,
-          rarity: {
-            value: 'legendary',
-            displayValue: 'Legendario',
-            backendValue: 'Legendary'
-          },
-          images: {
-            icon: '/img/placeholder.webp'
-          },
-          type: {
-            value: 'outfit',
-            displayValue: 'Skin',
-            backendValue: 'AthenaCharacter'
-          }
-        },
-        {
-          id: 'mock-featured-2',
-          name: 'Paquete Estelar',
-          description: 'Bundle especial con items exclusivos',
-          price: 2800,
-          rarity: {
-            value: 'marvel',
-            displayValue: 'Marvel',
-            backendValue: 'Marvel'
-          },
-          images: {
-            icon: '/img/placeholder.webp'
-          },
-          type: {
-            value: 'bundle',
-            displayValue: 'Bundle',
-            backendValue: 'AthenaBundle'
-          }
-        },
-        {
-          id: 'mock-featured-3',
-          name: 'Ala de Búho Nocturno',
-          description: 'Ala delta con diseño nocturno',
-          price: 800,
-          rarity: {
-            value: 'rare',
-            displayValue: 'Raro',
-            backendValue: 'Rare'
-          },
-          images: {
-            icon: '/img/placeholder.webp'
-          },
-          type: {
-            value: 'glider',
-            displayValue: 'Ala delta',
-            backendValue: 'AthenaGlider'
-          }
-        },
-        {
-          id: 'mock-featured-4',
-          name: 'Emote Especial',
-          description: 'Baile exclusivo con efectos',
-          price: 500,
-          rarity: {
-            value: 'uncommon',
-            displayValue: 'Poco Común',
-            backendValue: 'Uncommon'
-          },
-          images: {
-            icon: '/img/placeholder.webp'
-          },
-          type: {
-            value: 'emote',
-            displayValue: 'Emote',
-            backendValue: 'AthenaDance'
-          }
-        }
-      ],
+      daily: mockItems.slice(0, 4),
+      featured: mockItems.slice(2),
       lastUpdate: new Date().toISOString()
     };
   };
@@ -1119,7 +1110,7 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* SECCIÓN TIENDA FORTNITE - CORREGIDA */}
+      {/* SECCIÓN TIENDA FORTNITE - ACTUALIZADA */}
       {activeSection === 'fortnite-shop' && (
         <section className="section fortnite-shop-section">
           <div className="shop-header">
@@ -1138,6 +1129,25 @@ const HomePage: React.FC = () => {
                 </span>
               )}
             </div>
+          </div>
+
+          {/* Información de estado de la API */}
+          <div className="api-status">
+            <div className="status-indicator">
+              <span className={`status-dot ${shopError ? 'error' : 'success'}`}></span>
+              <span className="status-text">
+                {shopError ? '⚠️ Usando datos de ejemplo' : '✅ Conectado a FortniteAPI.io'}
+              </span>
+            </div>
+            {shopError && (
+              <div className="status-help">
+                <small>
+                  {currentLanguage === 'es' 
+                    ? 'Solución: Verifica tu API Key en FortniteAPI.io y actualiza el código.'
+                    : 'Fix: Check your API Key at FortniteAPI.io and update the code.'}
+                </small>
+              </div>
+            )}
           </div>
 
           {/* Estado de carga */}

@@ -1125,3 +1125,51 @@ body {
     font-size: 1rem;
   }
 }
+/* Estilos para el estado de la API */
+.api-status {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-dot.success {
+  background: #4ade80;
+  box-shadow: 0 0 10px #4ade80;
+}
+
+.status-dot.error {
+  background: #f87171;
+  box-shadow: 0 0 10px #f87171;
+}
+
+.status-text {
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.status-help {
+  color: #ccc;
+  font-size: 0.8rem;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
