@@ -1,4 +1,4 @@
-// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON API FUNCIONAL
+// app/page.tsx - VERSIÓN COMPLETA CORREGIDA
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -417,7 +417,7 @@ const HomePage: React.FC = () => {
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
   };
 
-  // 🔄 FUNCIÓN ACTUALIZADA - CON BACKEND Y MANEJO DE ERRORES
+  // 🔄 FUNCIÓN CORREGIDA - CON ESTRUCTURA API CORRECTA
   const fetchFortniteShop = async () => {
     setShopLoading(true);
     setShopError(null);
@@ -437,9 +437,16 @@ const HomePage: React.FC = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Backend funcionando - Datos recibidos');
+        console.log('✅ Backend funcionando - Datos recibidos:', data);
         
-        if (data.shop && Array.isArray(data.shop)) {
+        // ✅ CORRECCIÓN: Verificar la estructura correcta de la API
+        if (data.data && data.data.shop) {
+          const processedShop = processFortniteApiData(data.data);
+          setFortniteShop({...processedShop, source: 'api'});
+          setShopError(null);
+          return;
+        } else if (data.shop) {
+          // Si viene directamente en data.shop (fallback)
           const processedShop = processFortniteApiData(data);
           setFortniteShop({...processedShop, source: 'api'});
           setShopError(null);
@@ -454,7 +461,7 @@ const HomePage: React.FC = () => {
       }
       
     } catch (error) {
-      console.log('❌ Backend no disponible, usando datos de ejemplo realistas...');
+      console.error('❌ Error cargando tienda:', error);
       
       // Datos de ejemplo MEJORADOS - más realistas
       const mockShopData = createRealisticMockShopData();
@@ -471,16 +478,21 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // 🔧 FUNCIÓN DE PROCESAMIENTO OPTIMIZADA
+  // 🔧 FUNCIÓN DE PROCESAMIENTO OPTIMIZADA Y CORREGIDA
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
 
-    console.log('🔧 Processing 202 items from real API...');
+    console.log('🔧 Procesando datos de la API...', apiData);
 
-    if (apiData.shop && Array.isArray(apiData.shop)) {
-      // Procesar solo los primeros 20 items para evitar demasiados requests
-      const itemsToProcess = apiData.shop.slice(0, 20);
+    // ✅ CORRECCIÓN: Usar la estructura correcta
+    const shopData = apiData.shop || [];
+    
+    if (shopData && Array.isArray(shopData)) {
+      console.log(`🎯 Procesando ${shopData.length} items de la API real...`);
+
+      // Procesar items para evitar demasiados requests
+      const itemsToProcess = shopData.slice(0, 20);
       
       itemsToProcess.forEach((item: any, index: number) => {
         try {
@@ -508,10 +520,11 @@ const HomePage: React.FC = () => {
               }
             };
 
-            // Clasificar como featured o daily
+            // Clasificar como featured o daily basado en secciones reales
             const isFeatured = item.section?.id === 'featured' || 
                              item.featured === true ||
-                             (item.section?.name && item.section.name.toLowerCase().includes('featured'));
+                             (item.section?.name && item.section.name.toLowerCase().includes('featured')) ||
+                             item.sectionId === 'featured';
 
             if (isFeatured && featuredItems.length < 8) {
               featuredItems.push(processedItem);
