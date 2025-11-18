@@ -124,6 +124,8 @@ body {
   width: 100%;
   height: auto;
   display: block;
+  max-height: 200px;
+  object-fit: cover;
 }
 
 /* Navegación mejorada */
@@ -278,6 +280,7 @@ body {
   color: white;
   font-size: 1rem;
   backdrop-filter: blur(10px);
+  cursor: pointer;
 }
 
 .currency-selector select option {
@@ -1339,6 +1342,27 @@ body {
   text-shadow: 0 0 10px #ffffff;
 }
 
+/* DEBUG INFO - Mejorado */
+.debug-info {
+  background: rgba(255, 255, 0, 0.1) !important;
+  border: 2px solid yellow !important;
+  padding: 1rem !important;
+  border-radius: 8px !important;
+  margin-bottom: 1rem !important;
+  font-size: 0.9rem !important;
+  color: #ffd700 !important;
+}
+
+.debug-info h4 {
+  color: #ffd700 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.debug-info p {
+  margin-bottom: 0.25rem !important;
+  color: #ffd700 !important;
+}
+
 /* RESPONSIVE PARA TIENDA FORTNITE - CORREGIDO */
 @media (max-width: 768px) {
   .fortnite-shop-section {
@@ -1388,6 +1412,14 @@ body {
   }
   
   .item-description {
+    font-size: 0.9rem;
+  }
+  
+  .api-status {
+    padding: 0.75rem 1rem;
+  }
+  
+  .status-text {
     font-size: 0.9rem;
   }
 }
@@ -1557,16 +1589,68 @@ body {
     padding: 0.8rem;
     font-size: 1rem;
   }
+  
+  /* WhatsApp button más pequeño en móviles */
+  .whatsapp-btn {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.8rem;
+  }
 }
 
-/* ESTILOS PARA DEBUG - Puedes remover esto después */
-.debug-info {
-  background: rgba(255, 0, 0, 0.1);
-  border: 1px solid red;
-  padding: 1rem;
-  margin: 1rem 0;
-  border-radius: 5px;
-  color: #ff6b6b;
-  font-family: monospace;
-  font-size: 0.9rem;
+/* Mejoras adicionales para mejor visualización */
+.comment-form input:focus,
+.comment-form textarea:focus,
+.currency-selector select:focus {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Mejoras de accesibilidad */
+.btn:focus,
+.nav a:focus,
+.language-toggle:focus {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Optimizaciones de rendimiento */
+.neon-card,
+.shop-item,
+.product {
+  will-change: transform;
+}
+
+/* Estados de carga mejorados */
+.loading-shop {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.02) 50%, 
+    rgba(255, 255, 255, 0.05) 100%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 2s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 }

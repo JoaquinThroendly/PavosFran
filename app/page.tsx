@@ -1,4 +1,4 @@
-// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON API FUNCIONAL
+// app/page.tsx - VERSIÓN COMPLETA ACTUALIZADA CON API FUNCIONAL
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -423,16 +423,18 @@ const HomePage: React.FC = () => {
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
   };
 
-  // 🔄 FUNCIÓN CORREGIDA - CON MÁS LOGGING
-  const fetchFortniteShop = async () => {
+  // 🔄 FUNCIÓN MEJORADA - CON MÁS MANEJO DE ERRORES
+  const fetchFortniteShop = async (forceRefresh = false) => {
+    if (shopLoading && !forceRefresh) return;
+    
     setShopLoading(true);
     setShopError(null);
     console.log('🚀 INICIANDO fetchFortniteShop...');
     
     try {
-      console.log('🔄 Intentando conectar con el backend /api/fortnite-shop...');
-      
-      const response = await fetch('/api/fortnite-shop', {
+      const response = await fetch('/api/fortnite-shop?' + new URLSearchParams({
+        _t: Date.now().toString() // Evitar cache
+      }), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -440,219 +442,144 @@ const HomePage: React.FC = () => {
       });
 
       console.log('📡 Respuesta HTTP:', response.status, response.statusText);
-      console.log('📡 Response ok:', response.ok);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Backend funcionando - Datos recibidos:', data);
+        console.log('✅ Datos recibidos del backend:', data);
         
-        // DEBUG: Mostrar estructura completa
-        console.log('🔍 Estructura completa de data:', JSON.stringify(data, null, 2));
-        
-        // ✅ CORRECCIÓN: Verificar la estructura correcta de la API
-        if (data.data && data.data.shop) {
-          console.log('🎯 Estructura: data.data.shop encontrado');
-          const processedShop = processFortniteApiData(data.data);
-          setFortniteShop({...processedShop, source: 'api'});
-          setShopError(null);
-          return;
-        } else if (data.shop) {
-          console.log('🎯 Estructura: data.shop encontrado (fallback)');
-          const processedShop = processFortniteApiData(data);
-          setFortniteShop({...processedShop, source: 'api'});
-          setShopError(null);
-          return;
-        } else {
-          console.log('❌ Estructura desconocida:', Object.keys(data));
-          throw new Error('Estructura de datos inválida del backend');
-        }
+        const processedShop = processFortniteApiData(data);
+        setFortniteShop({...processedShop, source: 'api'});
+        setShopError(null);
         
       } else {
-        console.log('❌ Error HTTP:', response.status);
-        const errorText = await response.text();
-        console.log('❌ Error response:', errorText);
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
     } catch (error) {
-      console.error('💥 ERROR completo en fetchFortniteShop:', error);
+      console.error('💥 ERROR:', error);
       
-      // Datos de ejemplo MEJORADOS - más realistas
-      console.log('🔄 Usando datos de demostración...');
+      // Usar datos de demostración
       const mockShopData = createRealisticMockShopData();
       setFortniteShop({...mockShopData, source: 'mock'});
       
       setShopError(
         currentLanguage === 'es' 
-          ? 'Modo demostración: Los datos en tiempo real no están disponibles temporalmente'
-          : 'Demo mode: Real-time data is temporarily unavailable'
+          ? 'Modo demostración: Los datos en tiempo real no están disponibles'
+          : 'Demo mode: Real-time data is unavailable'
       );
       
     } finally {
-      console.log('🏁 Finalizando fetchFortniteShop');
       setShopLoading(false);
     }
   };
 
-  // 🔧 FUNCIÓN DE PROCESAMIENTO CORREGIDA - CLASIFICACIÓN MEJORADA
+  // 🔧 FUNCIÓN DE PROCESAMIENTO CORREGIDA - MÁS FLEXIBLE
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
 
     console.log('🔧 Procesando datos de la API...', apiData);
 
-    // ✅ CORRECCIÓN: Usar la estructura correcta
-    const shopData = apiData.shop || [];
+    // ✅ MÚLTIPLES ESTRUCTURAS POSIBLES - MÁS FLEXIBLE
+    let shopData = [];
     
+    if (apiData.data && apiData.data.shop) {
+      shopData = apiData.data.shop;
+    } else if (apiData.shop) {
+      shopData = apiData.shop;
+    } else if (apiData.featured && apiData.daily) {
+      // Si ya viene separado en featured y daily
+      return {
+        daily: processItemsArray(apiData.daily),
+        featured: processItemsArray(apiData.featured),
+        lastUpdate: new Date().toISOString(),
+        source: 'api'
+      };
+    } else {
+      shopData = apiData;
+    }
+
+    console.log(`🎯 Procesando ${shopData.length} items de la tienda...`);
+
+    // Función auxiliar para procesar items
+    const processItemsArray = (items: any[]): FortniteItem[] => {
+      return items.map((item: any, index: number) => ({
+        id: item.id || `item-${index}-${Date.now()}`,
+        name: item.name || 'Unknown Item',
+        description: item.description || 'Fortnite Item',
+        price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
+        rarity: {
+          value: item.rarity?.id || item.rarity?.value || 'common',
+          displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
+          backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
+        },
+        images: {
+          icon: getValidImageUrl(item.images?.icon),
+          featured: getValidImageUrl(item.images?.featured),
+          background: getValidImageUrl(item.images?.background)
+        },
+        type: {
+          value: item.type?.value || item.type?.id || 'outfit',
+          displayValue: item.type?.displayValue || item.type?.name || 'Skin',
+          backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
+        }
+      }));
+    };
+
+    // Si la API ya separa los items
+    if (apiData.featured && apiData.daily) {
+      return {
+        daily: processItemsArray(apiData.daily),
+        featured: processItemsArray(apiData.featured),
+        lastUpdate: new Date().toISOString(),
+        source: 'api'
+      };
+    }
+
+    // Si tenemos que clasificar manualmente
     if (shopData && Array.isArray(shopData)) {
-      console.log(`🎯 Procesando ${shopData.length} items de la API real...`);
-
-      // Procesar todos los items
       shopData.forEach((item: any, index: number) => {
-        try {
-          // Solo procesar items con nombre y que sean comprables
-          if (item && item.name && item.cost !== undefined) {
-            const processedItem: FortniteItem = {
-              id: item.id || `item-${index}`,
-              name: item.name,
-              description: item.description || 'Fortnite Item',
-              price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
-              rarity: {
-                value: item.rarity?.id || item.rarity?.value || 'common',
-                displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
-                backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
-              },
-              images: {
-                icon: getValidImageUrl(item.images?.icon),
-                featured: getValidImageUrl(item.images?.featured),
-                background: getValidImageUrl(item.images?.background)
-              },
-              type: {
-                value: item.type?.value || item.type?.id || 'outfit',
-                displayValue: item.type?.displayValue || item.type?.name || 'Skin',
-                backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
-              }
-            };
-
-            // ✅ CORRECCIÓN MEJORADA: Clasificar basado en secciones reales de Fortnite
-            const isFeatured = 
-              item.section?.id === 'featured' ||
-              item.section?.name?.toLowerCase().includes('featured') ||
-              item.featured === true ||
-              item.sectionId === 'featured' ||
-              (item.section && 
-               (item.section.name === 'Featured' || 
-                item.section.name === 'Destacados' ||
-                item.section.name === 'Featured Items'));
-
-            const isDaily = 
-              item.section?.id === 'daily' ||
-              item.section?.name?.toLowerCase().includes('daily') ||
-              item.sectionId === 'daily' ||
-              (item.section && 
-               (item.section.name === 'Daily' || 
-                item.section.name === 'Diario' ||
-                item.section.name === 'Daily Items'));
-
-            // Si no podemos determinar por sección, usar heurística
-            if (isFeatured) {
-              if (featuredItems.length < 12) {
-                featuredItems.push(processedItem);
-              }
-            } else if (isDaily) {
-              if (dailyItems.length < 12) {
-                dailyItems.push(processedItem);
-              }
-            } else {
-              // Heurística: items caros o con rarity alta van a featured
-              const isExpensive = processedItem.price > 1000;
-              const isHighRarity = ['legendary', 'epic', 'marvel', 'icon'].includes(processedItem.rarity.value.toLowerCase());
-              
-              if ((isExpensive || isHighRarity) && featuredItems.length < 12) {
-                featuredItems.push(processedItem);
-              } else if (dailyItems.length < 12) {
-                dailyItems.push(processedItem);
-              }
+        if (item && item.name) {
+          const processedItem: FortniteItem = {
+            id: item.id || `item-${index}-${Date.now()}`,
+            name: item.name,
+            description: item.description || 'Fortnite Item',
+            price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
+            rarity: {
+              value: item.rarity?.id || item.rarity?.value || 'common',
+              displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
+              backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
+            },
+            images: {
+              icon: getValidImageUrl(item.images?.icon),
+              featured: getValidImageUrl(item.images?.featured),
+              background: getValidImageUrl(item.images?.background)
+            },
+            type: {
+              value: item.type?.value || item.type?.id || 'outfit',
+              displayValue: item.type?.displayValue || item.type?.name || 'Skin',
+              backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
             }
+          };
+
+          // Clasificación simplificada
+          const isFeatured = 
+            item.section?.id === 'featured' ||
+            item.featured === true ||
+            item.sectionId === 'featured' ||
+            (item.rarity?.value && ['legendary', 'epic'].includes(item.rarity.value.toLowerCase()));
+
+          if (isFeatured && featuredItems.length < 8) {
+            featuredItems.push(processedItem);
+          } else if (dailyItems.length < 8) {
+            dailyItems.push(processedItem);
           }
-        } catch (error) {
-          console.warn(`⚠️ Error procesando item ${index}:`, error);
         }
       });
     }
 
-    // ✅ CORRECCIÓN: Si no encontramos items, usar los primeros como featured y el resto como daily
-    if (featuredItems.length === 0 && dailyItems.length === 0 && shopData.length > 0) {
-      console.log('🔄 Usando clasificación por defecto...');
-      
-      // Tomar primeros 8-12 items como featured
-      const featuredCount = Math.min(12, Math.floor(shopData.length / 3));
-      shopData.slice(0, featuredCount).forEach((item: any, index: number) => {
-        if (item && item.name) {
-          const processedItem: FortniteItem = {
-            id: item.id || `item-${index}`,
-            name: item.name,
-            description: item.description || 'Fortnite Item',
-            price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
-            rarity: {
-              value: item.rarity?.id || item.rarity?.value || 'common',
-              displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
-              backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
-            },
-            images: {
-              icon: getValidImageUrl(item.images?.icon),
-              featured: getValidImageUrl(item.images?.featured),
-              background: getValidImageUrl(item.images?.background)
-            },
-            type: {
-              value: item.type?.value || item.type?.id || 'outfit',
-              displayValue: item.type?.displayValue || item.type?.name || 'Skin',
-              backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
-            }
-          };
-          featuredItems.push(processedItem);
-        }
-      });
-
-      // El resto como daily
-      shopData.slice(featuredCount, featuredCount + 12).forEach((item: any, index: number) => {
-        if (item && item.name) {
-          const processedItem: FortniteItem = {
-            id: item.id || `daily-${index}`,
-            name: item.name,
-            description: item.description || 'Fortnite Item',
-            price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
-            rarity: {
-              value: item.rarity?.id || item.rarity?.value || 'common',
-              displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
-              backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
-            },
-            images: {
-              icon: getValidImageUrl(item.images?.icon),
-              featured: getValidImageUrl(item.images?.featured),
-              background: getValidImageUrl(item.images?.background)
-            },
-            type: {
-              value: item.type?.value || item.type?.id || 'outfit',
-              displayValue: item.type?.displayValue || item.type?.name || 'Skin',
-              backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
-            }
-          };
-          dailyItems.push(processedItem);
-        }
-      });
-    }
-
-    console.log(`🎯 Final: ${featuredItems.length} featured, ${dailyItems.length} daily`);
+    console.log(`✅ Procesado: ${featuredItems.length} featured, ${dailyItems.length} daily`);
     
-    // Log de algunos items para debug
-    if (featuredItems.length > 0) {
-      console.log('📦 Featured items sample:', featuredItems.slice(0, 3));
-    }
-    if (dailyItems.length > 0) {
-      console.log('📦 Daily items sample:', dailyItems.slice(0, 3));
-    }
-
     return {
       daily: dailyItems,
       featured: featuredItems,
@@ -885,6 +812,15 @@ const HomePage: React.FC = () => {
       clearInterval(carouselInterval);
     };
   }, []);
+
+  // Debug useEffect para verificar estado de fortniteShop
+  useEffect(() => {
+    console.log('🔄 Estado fortniteShop actualizado:', fortniteShop);
+    if (fortniteShop) {
+      console.log('📊 Featured items:', fortniteShop.featured);
+      console.log('📊 Daily items:', fortniteShop.daily);
+    }
+  }, [fortniteShop]);
 
   // Cargar idioma preferido
   useEffect(() => {
@@ -1214,7 +1150,7 @@ const HomePage: React.FC = () => {
             <div className="shop-controls">
               <button 
                 className="btn neon-btn refresh-btn" 
-                onClick={fetchFortniteShop}
+                onClick={() => fetchFortniteShop(true)}
                 disabled={shopLoading}
               >
                 {shopLoading ? '🔄 Cargando...' : '🔄 ' + t.refreshShop}
@@ -1245,7 +1181,7 @@ const HomePage: React.FC = () => {
             <button 
               onClick={() => {
                 console.log('🔄 Forzando recarga...');
-                fetchFortniteShop();
+                fetchFortniteShop(true);
               }}
               className="btn"
               style={{background: '#ffd700', color: 'black', marginTop: '0.5rem'}}
@@ -1291,12 +1227,12 @@ const HomePage: React.FC = () => {
             </div>
           )}
 
-          {/* Tienda cargada */}
-          {fortniteShop && !shopLoading && (
+          {/* Tienda cargada - CONDICIÓN MEJORADA */}
+          {fortniteShop && !shopLoading && (fortniteShop.featured.length > 0 || fortniteShop.daily.length > 0) && (
             <div className="fortnite-shop">
               {/* Items Destacados */}
               <div className="shop-category">
-                <h3 className="neon-text">⭐ {t.featuredItems}</h3>
+                <h3 className="neon-text">⭐ {t.featuredItems} ({fortniteShop.featured.length})</h3>
                 {fortniteShop.featured.length > 0 ? (
                   <div className="items-grid">
                     {fortniteShop.featured.map((item) => (
@@ -1305,7 +1241,7 @@ const HomePage: React.FC = () => {
                         className="shop-item neon-card"
                         style={{ 
                           borderColor: getRarityColor(item.rarity.value),
-                                                     background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
+                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
                         }}
                       >
                         <div className="item-image-container">
@@ -1315,7 +1251,7 @@ const HomePage: React.FC = () => {
                             className="item-image"
                             loading="lazy"
                             onError={(e) => {
-                              // Solo fallback a placeholder base64 si falla
+                              console.log('❌ Error cargando imagen:', item.images.icon);
                               (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
                             }}
                           />
@@ -1350,17 +1286,14 @@ const HomePage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="no-items">
-                    <p>{t.noItemsAvailable}</p>
-                    <button className="btn neon-btn" onClick={fetchFortniteShop}>
-                      {t.tryAgain}
-                    </button>
+                    <p>No hay items destacados disponibles</p>
                   </div>
                 )}
               </div>
 
               {/* Items Diarios */}
               <div className="shop-category">
-                <h3 className="neon-text">📅 {t.dailyItems}</h3>
+                <h3 className="neon-text">📅 {t.dailyItems} ({fortniteShop.daily.length})</h3>
                 {fortniteShop.daily.length > 0 ? (
                   <div className="items-grid">
                     {fortniteShop.daily.map((item) => (
@@ -1379,7 +1312,7 @@ const HomePage: React.FC = () => {
                             className="item-image"
                             loading="lazy"
                             onError={(e) => {
-                              // Solo fallback a placeholder base64 si falla
+                              console.log('❌ Error cargando imagen:', item.images.icon);
                               (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
                             }}
                           />
@@ -1414,10 +1347,7 @@ const HomePage: React.FC = () => {
                   </div>
                 ) : (
                   <div className="no-items">
-                    <p>{t.noItemsAvailable}</p>
-                    <button className="btn neon-btn" onClick={fetchFortniteShop}>
-                      {t.tryAgain}
-                    </button>
+                    <p>No hay items diarios disponibles</p>
                   </div>
                 )}
               </div>
@@ -1428,7 +1358,7 @@ const HomePage: React.FC = () => {
           {!fortniteShop && !shopLoading && shopError && (
             <div className="shop-error">
               <p>{t.errorLoadingShop}</p>
-              <button className="btn neon-btn" onClick={fetchFortniteShop}>
+              <button className="btn neon-btn" onClick={() => fetchFortniteShop(true)}>
                 {t.tryAgain}
               </button>
             </div>
