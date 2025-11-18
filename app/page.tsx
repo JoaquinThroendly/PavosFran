@@ -1,4 +1,4 @@
-// app/page.tsx - VERSIÓN COMPLETA CORREGIDA
+// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON API FUNCIONAL
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -396,9 +396,9 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // 🔧 FUNCIÓN CORREGIDA PARA URLs DE IMÁGENES - SIN LOOP
+  // 🔧 FUNCIÓN MEJORADA PARA URLs DE IMÁGENES
   const getValidImageUrl = (url: string | undefined): string => {
-    // Si no hay URL, usar placeholder base64 inmediatamente
+    // Si no hay URL, usar placeholder
     if (!url || url.includes('null') || url === '' || url === 'undefined') {
       return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
     }
@@ -408,24 +408,30 @@ const HomePage: React.FC = () => {
       return url;
     }
     
-    // Si es una ruta relativa de FortniteAPI, construir URL completa
+    // Si es una ruta relativa, construir URL completa de FortniteAPI
     if (url.startsWith('/') || url.startsWith('images/')) {
-      return `https://fortniteapi.io${url.startsWith('/') ? url : '/' + url}`;
+      const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+      return `https://fortniteapi.io${cleanUrl}`;
     }
     
-    // Cualquier otro caso, usar placeholder base64
+    // Para otros casos de Fortnite API
+    if (url.includes('fortniteapi.io') || url.includes('cdn2.unrealengine.com')) {
+      return url;
+    }
+    
+    // Cualquier otro caso, usar placeholder
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
   };
 
-  // 🔄 FUNCIÓN CORREGIDA - CON ESTRUCTURA API CORRECTA
+  // 🔄 FUNCIÓN CORREGIDA - CON MÁS LOGGING
   const fetchFortniteShop = async () => {
     setShopLoading(true);
     setShopError(null);
+    console.log('🚀 INICIANDO fetchFortniteShop...');
     
     try {
-      console.log('🔄 Intentando conectar con el backend...');
+      console.log('🔄 Intentando conectar con el backend /api/fortnite-shop...');
       
-      // Primero intentar con nuestro backend
       const response = await fetch('/api/fortnite-shop', {
         method: 'GET',
         headers: {
@@ -433,37 +439,46 @@ const HomePage: React.FC = () => {
         },
       });
 
-      console.log('📡 Respuesta del backend:', response.status, response.ok);
+      console.log('📡 Respuesta HTTP:', response.status, response.statusText);
+      console.log('📡 Response ok:', response.ok);
 
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Backend funcionando - Datos recibidos:', data);
         
+        // DEBUG: Mostrar estructura completa
+        console.log('🔍 Estructura completa de data:', JSON.stringify(data, null, 2));
+        
         // ✅ CORRECCIÓN: Verificar la estructura correcta de la API
         if (data.data && data.data.shop) {
+          console.log('🎯 Estructura: data.data.shop encontrado');
           const processedShop = processFortniteApiData(data.data);
           setFortniteShop({...processedShop, source: 'api'});
           setShopError(null);
           return;
         } else if (data.shop) {
-          // Si viene directamente en data.shop (fallback)
+          console.log('🎯 Estructura: data.shop encontrado (fallback)');
           const processedShop = processFortniteApiData(data);
           setFortniteShop({...processedShop, source: 'api'});
           setShopError(null);
           return;
+        } else {
+          console.log('❌ Estructura desconocida:', Object.keys(data));
+          throw new Error('Estructura de datos inválida del backend');
         }
-        throw new Error('Estructura de datos inválida del backend');
         
       } else {
-        // Si el backend falla, mostrar error específico
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Error ${response.status}`);
+        console.log('❌ Error HTTP:', response.status);
+        const errorText = await response.text();
+        console.log('❌ Error response:', errorText);
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
       
     } catch (error) {
-      console.error('❌ Error cargando tienda:', error);
+      console.error('💥 ERROR completo en fetchFortniteShop:', error);
       
       // Datos de ejemplo MEJORADOS - más realistas
+      console.log('🔄 Usando datos de demostración...');
       const mockShopData = createRealisticMockShopData();
       setFortniteShop({...mockShopData, source: 'mock'});
       
@@ -474,11 +489,12 @@ const HomePage: React.FC = () => {
       );
       
     } finally {
+      console.log('🏁 Finalizando fetchFortniteShop');
       setShopLoading(false);
     }
   };
 
-  // 🔧 FUNCIÓN DE PROCESAMIENTO OPTIMIZADA Y CORREGIDA
+  // 🔧 FUNCIÓN DE PROCESAMIENTO CORREGIDA - CLASIFICACIÓN MEJORADA
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
@@ -491,13 +507,11 @@ const HomePage: React.FC = () => {
     if (shopData && Array.isArray(shopData)) {
       console.log(`🎯 Procesando ${shopData.length} items de la API real...`);
 
-      // Procesar items para evitar demasiados requests
-      const itemsToProcess = shopData.slice(0, 20);
-      
-      itemsToProcess.forEach((item: any, index: number) => {
+      // Procesar todos los items
+      shopData.forEach((item: any, index: number) => {
         try {
-          // Solo procesar items con nombre
-          if (item && item.name) {
+          // Solo procesar items con nombre y que sean comprables
+          if (item && item.name && item.cost !== undefined) {
             const processedItem: FortniteItem = {
               id: item.id || `item-${index}`,
               name: item.name,
@@ -520,16 +534,45 @@ const HomePage: React.FC = () => {
               }
             };
 
-            // Clasificar como featured o daily basado en secciones reales
-            const isFeatured = item.section?.id === 'featured' || 
-                             item.featured === true ||
-                             (item.section?.name && item.section.name.toLowerCase().includes('featured')) ||
-                             item.sectionId === 'featured';
+            // ✅ CORRECCIÓN MEJORADA: Clasificar basado en secciones reales de Fortnite
+            const isFeatured = 
+              item.section?.id === 'featured' ||
+              item.section?.name?.toLowerCase().includes('featured') ||
+              item.featured === true ||
+              item.sectionId === 'featured' ||
+              (item.section && 
+               (item.section.name === 'Featured' || 
+                item.section.name === 'Destacados' ||
+                item.section.name === 'Featured Items'));
 
-            if (isFeatured && featuredItems.length < 8) {
-              featuredItems.push(processedItem);
-            } else if (dailyItems.length < 8) {
-              dailyItems.push(processedItem);
+            const isDaily = 
+              item.section?.id === 'daily' ||
+              item.section?.name?.toLowerCase().includes('daily') ||
+              item.sectionId === 'daily' ||
+              (item.section && 
+               (item.section.name === 'Daily' || 
+                item.section.name === 'Diario' ||
+                item.section.name === 'Daily Items'));
+
+            // Si no podemos determinar por sección, usar heurística
+            if (isFeatured) {
+              if (featuredItems.length < 12) {
+                featuredItems.push(processedItem);
+              }
+            } else if (isDaily) {
+              if (dailyItems.length < 12) {
+                dailyItems.push(processedItem);
+              }
+            } else {
+              // Heurística: items caros o con rarity alta van a featured
+              const isExpensive = processedItem.price > 1000;
+              const isHighRarity = ['legendary', 'epic', 'marvel', 'icon'].includes(processedItem.rarity.value.toLowerCase());
+              
+              if ((isExpensive || isHighRarity) && featuredItems.length < 12) {
+                featuredItems.push(processedItem);
+              } else if (dailyItems.length < 12) {
+                dailyItems.push(processedItem);
+              }
             }
           }
         } catch (error) {
@@ -538,7 +581,77 @@ const HomePage: React.FC = () => {
       });
     }
 
+    // ✅ CORRECCIÓN: Si no encontramos items, usar los primeros como featured y el resto como daily
+    if (featuredItems.length === 0 && dailyItems.length === 0 && shopData.length > 0) {
+      console.log('🔄 Usando clasificación por defecto...');
+      
+      // Tomar primeros 8-12 items como featured
+      const featuredCount = Math.min(12, Math.floor(shopData.length / 3));
+      shopData.slice(0, featuredCount).forEach((item: any, index: number) => {
+        if (item && item.name) {
+          const processedItem: FortniteItem = {
+            id: item.id || `item-${index}`,
+            name: item.name,
+            description: item.description || 'Fortnite Item',
+            price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
+            rarity: {
+              value: item.rarity?.id || item.rarity?.value || 'common',
+              displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
+              backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
+            },
+            images: {
+              icon: getValidImageUrl(item.images?.icon),
+              featured: getValidImageUrl(item.images?.featured),
+              background: getValidImageUrl(item.images?.background)
+            },
+            type: {
+              value: item.type?.value || item.type?.id || 'outfit',
+              displayValue: item.type?.displayValue || item.type?.name || 'Skin',
+              backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
+            }
+          };
+          featuredItems.push(processedItem);
+        }
+      });
+
+      // El resto como daily
+      shopData.slice(featuredCount, featuredCount + 12).forEach((item: any, index: number) => {
+        if (item && item.name) {
+          const processedItem: FortniteItem = {
+            id: item.id || `daily-${index}`,
+            name: item.name,
+            description: item.description || 'Fortnite Item',
+            price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
+            rarity: {
+              value: item.rarity?.id || item.rarity?.value || 'common',
+              displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
+              backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
+            },
+            images: {
+              icon: getValidImageUrl(item.images?.icon),
+              featured: getValidImageUrl(item.images?.featured),
+              background: getValidImageUrl(item.images?.background)
+            },
+            type: {
+              value: item.type?.value || item.type?.id || 'outfit',
+              displayValue: item.type?.displayValue || item.type?.name || 'Skin',
+              backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
+            }
+          };
+          dailyItems.push(processedItem);
+        }
+      });
+    }
+
     console.log(`🎯 Final: ${featuredItems.length} featured, ${dailyItems.length} daily`);
+    
+    // Log de algunos items para debug
+    if (featuredItems.length > 0) {
+      console.log('📦 Featured items sample:', featuredItems.slice(0, 3));
+    }
+    if (dailyItems.length > 0) {
+      console.log('📦 Daily items sample:', dailyItems.slice(0, 3));
+    }
 
     return {
       daily: dailyItems,
@@ -1114,6 +1227,33 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
+          {/* DEBUG INFO TEMPORAL - REMOVER DESPUÉS */}
+          <div className="debug-info" style={{
+            background: 'rgba(255, 255, 0, 0.1)',
+            border: '2px solid yellow',
+            padding: '1rem',
+            borderRadius: '8px',
+            marginBottom: '1rem'
+          }}>
+            <h4>🔍 DEBUG INFO:</h4>
+            <p><strong>Estado carga:</strong> {shopLoading ? '🔄 CARGANDO...' : '✅ LISTO'}</p>
+            <p><strong>Error:</strong> {shopError || '❌ No hay error'}</p>
+            <p><strong>Datos FortniteShop:</strong> {fortniteShop ? '✅ EXISTE' : '❌ NULL'}</p>
+            <p><strong>Items destacados:</strong> {fortniteShop ? fortniteShop.featured.length : 0}</p>
+            <p><strong>Items diarios:</strong> {fortniteShop ? fortniteShop.daily.length : 0}</p>
+            <p><strong>Fuente:</strong> {fortniteShop?.source || 'N/A'}</p>
+            <button 
+              onClick={() => {
+                console.log('🔄 Forzando recarga...');
+                fetchFortniteShop();
+              }}
+              className="btn"
+              style={{background: '#ffd700', color: 'black', marginTop: '0.5rem'}}
+            >
+              🔄 Forzar Recarga Manual
+            </button>
+          </div>
+
           {/* Información de estado de la API - MEJORADA */}
           <div className="api-status">
             <div className="status-indicator">
@@ -1165,7 +1305,7 @@ const HomePage: React.FC = () => {
                         className="shop-item neon-card"
                         style={{ 
                           borderColor: getRarityColor(item.rarity.value),
-                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
+                                                     background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
                         }}
                       >
                         <div className="item-image-container">
@@ -1211,6 +1351,9 @@ const HomePage: React.FC = () => {
                 ) : (
                   <div className="no-items">
                     <p>{t.noItemsAvailable}</p>
+                    <button className="btn neon-btn" onClick={fetchFortniteShop}>
+                      {t.tryAgain}
+                    </button>
                   </div>
                 )}
               </div>
@@ -1272,9 +1415,22 @@ const HomePage: React.FC = () => {
                 ) : (
                   <div className="no-items">
                     <p>{t.noItemsAvailable}</p>
+                    <button className="btn neon-btn" onClick={fetchFortniteShop}>
+                      {t.tryAgain}
+                    </button>
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Estado de error */}
+          {!fortniteShop && !shopLoading && shopError && (
+            <div className="shop-error">
+              <p>{t.errorLoadingShop}</p>
+              <button className="btn neon-btn" onClick={fetchFortniteShop}>
+                {t.tryAgain}
+              </button>
             </div>
           )}
         </section>
