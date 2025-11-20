@@ -1,4 +1,4 @@
-// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON API FUNCIONAL
+// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON MANEJO DE PRECIOS
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -231,6 +231,14 @@ interface FortniteShop {
   source: 'api' | 'mock';
 }
 
+// Interface para objetos de precio
+interface PriceObject {
+  finalPrice?: number;
+  regularPrice?: number;
+  floorPrice?: number;
+  [key: string]: any;
+}
+
 // Función de respaldo para items con error
 const createFallbackItem = (index: number): FortniteItem => ({
   id: `fallback-${index}-${Date.now()}`,
@@ -252,7 +260,27 @@ const createFallbackItem = (index: number): FortniteItem => ({
   }
 });
 
-// Función auxiliar externa para procesar items - MEJORADA
+// Función para extraer precio de diferentes estructuras
+const extractPrice = (item: any): number => {
+  if (!item) return 0;
+
+  // Si el precio es un objeto, extraer el valor correcto
+  if (item.price && typeof item.price === 'object') {
+    const priceObj: PriceObject = item.price;
+    return priceObj.finalPrice || priceObj.regularPrice || priceObj.floorPrice || 0;
+  }
+  
+  // Si finalPrice es un objeto
+  if (item.finalPrice && typeof item.finalPrice === 'object') {
+    const finalPriceObj: PriceObject = item.finalPrice;
+    return finalPriceObj.finalPrice || finalPriceObj.regularPrice || 0;
+  }
+  
+  // Precios directos
+  return item.finalPrice || item.regularPrice || item.cost || item.price || 0;
+};
+
+// Función auxiliar externa para procesar items - CORREGIDA PARA PRECIOS
 const processItemsArray = (items: any[]): FortniteItem[] => {
   if (!items || !Array.isArray(items)) {
     console.warn('⚠️ processItemsArray: items no es un array válido', items);
@@ -265,11 +293,13 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
     }
 
     try {
+      const itemPrice = Number(extractPrice(item)) || 0;
+
       return {
         id: item.id || `item-${index}-${Date.now()}`,
         name: item.name || 'Unknown Item',
         description: item.description || item.introductionText || 'Fortnite Item',
-        price: item.finalPrice || item.regularPrice || item.cost || item.price || 0,
+        price: itemPrice,
         rarity: {
           value: item.rarity?.id || item.rarity?.value || item.rarity?.name?.toLowerCase() || 'common',
           displayValue: item.rarity?.name || item.rarity?.displayValue || item.rarity?.value || 'Common',
@@ -353,7 +383,35 @@ const debugApiStructure = (apiData: any) => {
   console.log('🔍 === FIN DEBUG ===');
 };
 
-// 🔧 FUNCIÓN DE PROCESAMIENTO COMPLETAMENTE CORREGIDA
+// Función para debuggear estructura de precios
+const debugPriceStructure = (items: any[]) => {
+  console.log('💰 === DEBUG PRICE STRUCTURE ===');
+  
+  if (!items || !Array.isArray(items)) {
+    console.log('❌ No hay items para debuggear');
+    return;
+  }
+
+  items.slice(0, 3).forEach((item, index) => {
+    console.log(`💰 Item ${index} - "${item?.name || 'Sin nombre'}"`);
+    console.log('   Precio directo:', item?.price);
+    console.log('   FinalPrice:', item?.finalPrice);
+    console.log('   RegularPrice:', item?.regularPrice);
+    console.log('   Cost:', item?.cost);
+    console.log('   Tipo de precio:', typeof item?.price);
+    
+    if (item?.price && typeof item.price === 'object') {
+      console.log('   🔍 Estructura del objeto precio:', item.price);
+    }
+    
+    const extractedPrice = extractPrice(item);
+    console.log('   ✅ Precio extraído:', extractedPrice, '(Tipo:', typeof extractedPrice + ')');
+  });
+  
+  console.log('💰 === FIN DEBUG PRICE ===');
+};
+
+// 🔧 FUNCIÓN DE PROCESAMIENTO COMPLETAMENTE CORREGIDA - VERSIÓN PRECIOS
 const processFortniteApiData = (apiData: any): FortniteShop => {
   console.log('🔧 Procesando datos de la API...', apiData);
 
@@ -419,25 +477,12 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
 
   if (items.length === 0) {
     console.warn('⚠️ No se encontraron items en la respuesta de la API');
-    console.log('🔍 Estructura completa de la API:', apiData);
-    
-    const allKeys = Object.keys(apiData);
-    console.log('🔍 Keys disponibles:', allKeys);
-    
-    for (const key of allKeys) {
-      const value = apiData[key];
-      if (Array.isArray(value) && value.length > 0) {
-        console.log(`🔍 Array encontrado en key "${key}":`, value.length, 'items');
-        const sampleItem = value[0];
-        console.log(`🔍 Ejemplo de item en "${key}":`, {
-          id: sampleItem.id,
-          name: sampleItem.name,
-          type: sampleItem.type,
-          section: sampleItem.section,
-          rarity: sampleItem.rarity
-        });
-      }
-    }
+    return {
+      daily: [],
+      featured: [],
+      lastUpdate: new Date().toISOString(),
+      source: 'api'
+    };
   }
 
   // Procesar todos los items encontrados
@@ -445,11 +490,13 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
     if (!item) return;
 
     try {
+      const itemPrice = Number(extractPrice(item)) || 0;
+
       const processedItem: FortniteItem = {
         id: item.id || `item-${index}-${Date.now()}`,
         name: item.name || 'Unknown Item',
         description: item.description || item.introductionText || 'Fortnite Item',
-        price: item.finalPrice || item.regularPrice || item.cost || item.price || 0,
+        price: itemPrice,
         rarity: {
           value: item.rarity?.id || item.rarity?.value || item.rarity?.name?.toLowerCase() || 'common',
           displayValue: item.rarity?.name || item.rarity?.displayValue || item.rarity?.value || 'Common',
@@ -467,7 +514,7 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
         }
       };
 
-      // ✅ CLASIFICACIÓN MEJORADA - MÚLTIPLES CRITERIOS
+      // Clasificación
       const isFeatured = 
         item.section?.id === 'featured' ||
         item.sectionId === 'featured' ||
@@ -475,9 +522,7 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
         item.featured === true ||
         item.bFeatured === true ||
         ['legendary', 'epic', 'marvel', 'icon', 'lava', 'frozen', 'shadow', 'dc', 'dark'].includes(item.rarity?.id?.toLowerCase()) ||
-        ['legendary', 'epic', 'marvel', 'icon', 'lava', 'frozen', 'shadow', 'dc', 'dark'].includes(item.rarity?.value?.toLowerCase()) ||
-        (['outfit', 'pickaxe', 'glider', 'backpack', 'emote'].includes(item.type?.value) && 
-        ['legendary', 'epic'].includes(item.rarity?.value?.toLowerCase()));
+        ['legendary', 'epic', 'marvel', 'icon', 'lava', 'frozen', 'shadow', 'dc', 'dark'].includes(item.rarity?.value?.toLowerCase());
 
       if (isFeatured && featuredItems.length < 12) {
         featuredItems.push(processedItem);
@@ -491,16 +536,14 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
   });
 
   console.log(`✅ Procesado final: ${featuredItems.length} featured, ${dailyItems.length} daily`);
-
-  if (featuredItems.length === 0 && dailyItems.length === 0 && items.length > 0) {
-    console.log('🔍 DEBUG - Primeros 3 items sin procesar:', items.slice(0, 3).map(item => ({
-      id: item.id,
-      name: item.name,
-      type: item.type,
-      section: item.section,
-      rarity: item.rarity,
-      price: item.finalPrice || item.regularPrice
-    })));
+  
+  // Log de los primeros items procesados para verificar
+  if (featuredItems.length > 0) {
+    console.log('📝 Primer featured item procesado:', {
+      name: featuredItems[0].name,
+      price: featuredItems[0].price,
+      priceType: typeof featuredItems[0].price
+    });
   }
 
   return {
@@ -535,15 +578,6 @@ const createRealisticMockShopData = (): FortniteShop => {
       type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
     },
     {
-      id: 'mock-featured-3',
-      name: 'Neonimal',
-      description: 'Traje animal con luces neon',
-      price: 800,
-      rarity: { value: 'rare', displayValue: 'Raro', backendValue: 'Rare' },
-      images: { icon: '/img/placeholder.webp' },
-      type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
-    },
-    {
       id: 'mock-daily-1',
       name: 'Rust Lord',
       description: 'Skin clásica de astronauta',
@@ -560,21 +594,12 @@ const createRealisticMockShopData = (): FortniteShop => {
       rarity: { value: 'uncommon', displayValue: 'Poco Común', backendValue: 'Uncommon' },
       images: { icon: '/img/placeholder.webp' },
       type: { value: 'emote', displayValue: 'Baile', backendValue: 'AthenaDance' }
-    },
-    {
-      id: 'mock-daily-3',
-      name: 'Laser Axe',
-      description: 'Hacha de energía láser',
-      price: 500,
-      rarity: { value: 'uncommon', displayValue: 'Poco Común', backendValue: 'Uncommon' },
-      images: { icon: '/img/placeholder.webp' },
-      type: { value: 'pickaxe', displayValue: 'Pico', backendValue: 'AthenaPickaxe' }
     }
   ];
 
   return {
-    daily: mockItems.slice(3),
-    featured: mockItems.slice(0, 3),
+    daily: mockItems.slice(2),
+    featured: mockItems.slice(0, 2),
     lastUpdate: currentDate.toISOString(),
     source: 'mock'
   };
@@ -635,26 +660,12 @@ const HomePage: React.FC = () => {
         prices: [
           { label: "Price", priceUSD: 16.50 }
         ]
-      },
-      {
-        id: 4,
-        image: "/img/products/3 meses game pass-pica.webp",
-        prices: [
-          { label: "Price", priceUSD: 32.75 }
-        ]
       }
     ],
     4: [
       {
         id: 5,
         image: "/img/products/economy.webp",
-        prices: [
-          { label: "Price", priceUSD: 22 }
-        ]
-      },
-      {
-        id: 6,
-        image: "/img/products/exclusive.webp",
         prices: [
           { label: "Price", priceUSD: 22 }
         ]
@@ -688,7 +699,7 @@ const HomePage: React.FC = () => {
       1: [t.fortniteCrew],
       2: [t.cosmeticsGift],
       3: [t.gamePass],
-      4: ["Simple Pack", "Exclusive Pack"],
+      4: ["Simple Pack"],
       5: [t.vbucks],
       6: [t.discounts]
     };
@@ -725,13 +736,6 @@ const HomePage: React.FC = () => {
       comment: "¡Servicio increíble! Recibí mis V-Bucks al instante.",
       date: "15/10/2023",
       rating: 5
-    },
-    {
-      id: 2,
-      name: "Ana L.",
-      comment: "Entrega rápida y precios geniales.",
-      date: "20/10/2023",
-      rating: 4
     }
   ];
 
@@ -762,6 +766,16 @@ const HomePage: React.FC = () => {
         console.log('✅ Datos recibidos del backend:', data);
         
         debugApiStructure(data);
+        
+        // Encontrar items para debug de precios
+        let debugItems: any[] = [];
+        if (data.data && data.data.shop) debugItems = data.data.shop;
+        else if (data.shop) debugItems = data.shop;
+        else if (data.featured) debugItems = data.featured;
+        
+        if (debugItems.length > 0) {
+          debugPriceStructure(debugItems);
+        }
         
         const processedShop = processFortniteApiData(data);
         setFortniteShop({...processedShop, source: 'api'});
