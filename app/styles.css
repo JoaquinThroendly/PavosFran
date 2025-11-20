@@ -1101,10 +1101,13 @@ body {
   margin-bottom: 1rem;
   line-height: 1.4;
   flex-grow: 1;
+  /* CORRECCIÓN: Agregar propiedad estándar line-clamp */
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-clamp: 3; /* Propiedad estándar */
+  -webkit-box-orient: vertical;
 }
 
 .item-details {

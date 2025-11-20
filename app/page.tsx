@@ -1,8 +1,35 @@
-// app/page.tsx - VERSIÓN COMPLETA ACTUALIZADA CON API FUNCIONAL
+// app/page.tsx - VERSIÓN COMPLETA CORREGIDA
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import './styles.css';
+
+// 🔧 FUNCIÓN MEJORADA PARA URLs DE IMÁGENES - MOVIDA AL PRINCIPIO
+const getValidImageUrl = (url: string | undefined): string => {
+  // Si no hay URL, usar placeholder
+  if (!url || url.includes('null') || url === '' || url === 'undefined') {
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+  }
+  
+  // Si ya es una URL completa, usarla directamente
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // Si es una ruta relativa, construir URL completa de FortniteAPI
+  if (url.startsWith('/') || url.startsWith('images/')) {
+    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    return `https://fortniteapi.io${cleanUrl}`;
+  }
+  
+  // Para otros casos de Fortnite API
+  if (url.includes('fortniteapi.io') || url.includes('cdn2.unrealengine.com')) {
+    return url;
+  }
+  
+  // Cualquier otro caso, usar placeholder
+  return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+};
 
 // Textos traducidos COMPLETOS
 const translations = {
@@ -211,6 +238,52 @@ interface FortniteShop {
   source: 'api' | 'mock';
 }
 
+// Función auxiliar externa para procesar items
+const processItemsArray = (items: any[]): FortniteItem[] => {
+  return items.map((item: any, index: number) => ({
+    id: item.id || `item-${index}-${Date.now()}`,
+    name: item.name || 'Unknown Item',
+    description: item.description || 'Fortnite Item',
+    price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
+    rarity: {
+      value: item.rarity?.id || item.rarity?.value || 'common',
+      displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
+      backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
+    },
+    images: {
+      icon: getValidImageUrl(item.images?.icon),
+      featured: getValidImageUrl(item.images?.featured),
+      background: getValidImageUrl(item.images?.background)
+    },
+    type: {
+      value: item.type?.value || item.type?.id || 'outfit',
+      displayValue: item.type?.displayValue || item.type?.name || 'Skin',
+      backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
+    }
+  }));
+};
+
+// FUNCIÓN PARA OBTENER COLOR SEGÚN RAREZA
+const getRarityColor = (rarity: string): string => {
+  const rarityColors: { [key: string]: string } = {
+    'common': '#888888',
+    'uncommon': '#00a8ff',
+    'rare': '#9b59b6',
+    'epic': '#e74c3c',
+    'legendary': '#f39c12',
+    'marvel': '#c0392b',
+    'dark': '#2c3e50',
+    'dc': '#3498db',
+    'lava': '#e67e22',
+    'frozen': '#1abc9c',
+    'shadow': '#8e44ad',
+    'icon': '#27ae60',
+    'star wars': '#f1c40f'
+  };
+  
+  return rarityColors[rarity.toLowerCase()] || '#888888';
+};
+
 const HomePage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [languageDropdown, setLanguageDropdown] = useState(false);
@@ -396,33 +469,6 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // 🔧 FUNCIÓN MEJORADA PARA URLs DE IMÁGENES
-  const getValidImageUrl = (url: string | undefined): string => {
-    // Si no hay URL, usar placeholder
-    if (!url || url.includes('null') || url === '' || url === 'undefined') {
-      return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
-    }
-    
-    // Si ya es una URL completa, usarla directamente
-    if (url.startsWith('http')) {
-      return url;
-    }
-    
-    // Si es una ruta relativa, construir URL completa de FortniteAPI
-    if (url.startsWith('/') || url.startsWith('images/')) {
-      const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-      return `https://fortniteapi.io${cleanUrl}`;
-    }
-    
-    // Para otros casos de Fortnite API
-    if (url.includes('fortniteapi.io') || url.includes('cdn2.unrealengine.com')) {
-      return url;
-    }
-    
-    // Cualquier otro caso, usar placeholder
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
-  };
-
   // 🔄 FUNCIÓN MEJORADA - CON MÁS MANEJO DE ERRORES
   const fetchFortniteShop = async (forceRefresh = false) => {
     if (shopLoading && !forceRefresh) return;
@@ -473,7 +519,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // 🔧 FUNCIÓN DE PROCESAMIENTO CORREGIDA - MÁS FLEXIBLE
+  // 🔧 FUNCIÓN DE PROCESAMIENTO CORREGIDA - USANDO FUNCIÓN EXTERNA
   const processFortniteApiData = (apiData: any): FortniteShop => {
     const dailyItems: FortniteItem[] = [];
     const featuredItems: FortniteItem[] = [];
@@ -500,31 +546,6 @@ const HomePage: React.FC = () => {
     }
 
     console.log(`🎯 Procesando ${shopData.length} items de la tienda...`);
-
-    // Función auxiliar para procesar items
-    const processItemsArray = (items: any[]): FortniteItem[] => {
-      return items.map((item: any, index: number) => ({
-        id: item.id || `item-${index}-${Date.now()}`,
-        name: item.name || 'Unknown Item',
-        description: item.description || 'Fortnite Item',
-        price: item.cost || item.price || item.finalPrice || item.regularPrice || 0,
-        rarity: {
-          value: item.rarity?.id || item.rarity?.value || 'common',
-          displayValue: item.rarity?.name || item.rarity?.displayValue || 'Common',
-          backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
-        },
-        images: {
-          icon: getValidImageUrl(item.images?.icon),
-          featured: getValidImageUrl(item.images?.featured),
-          background: getValidImageUrl(item.images?.background)
-        },
-        type: {
-          value: item.type?.value || item.type?.id || 'outfit',
-          displayValue: item.type?.displayValue || item.type?.name || 'Skin',
-          backendValue: item.type?.backendValue || item.type?.id || 'AthenaCharacter'
-        }
-      }));
-    };
 
     // Si la API ya separa los items
     if (apiData.featured && apiData.daily) {
@@ -691,27 +712,6 @@ const HomePage: React.FC = () => {
       lastUpdate: currentDate.toISOString(),
       source: 'mock'
     };
-  };
-
-  // FUNCIÓN PARA OBTENER COLOR SEGÚN RAREZA
-  const getRarityColor = (rarity: string): string => {
-    const rarityColors: { [key: string]: string } = {
-      'common': '#888888',
-      'uncommon': '#00a8ff',
-      'rare': '#9b59b6',
-      'epic': '#e74c3c',
-      'legendary': '#f39c12',
-      'marvel': '#c0392b',
-      'dark': '#2c3e50',
-      'dc': '#3498db',
-      'lava': '#e67e22',
-      'frozen': '#1abc9c',
-      'shadow': '#8e44ad',
-      'icon': '#27ae60',
-      'star wars': '#f1c40f'
-    };
-    
-    return rarityColors[rarity.toLowerCase()] || '#888888';
   };
 
   // Función para obtener tasas de cambio
