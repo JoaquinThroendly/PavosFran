@@ -4,8 +4,21 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   console.log('🚀 API Route: /api/fortnite-shop called');
   
-  const API_KEY = 'a9966904-5bc4bb17-b9ec8bf6-0d9486df';
+  // Usar variable de entorno en lugar de la key directa
+  const API_KEY = process.env.FORTNITE_API_KEY;
   const API_URL = 'https://fortniteapi.io/v2/shop?lang=es';
+
+  // Verificar que la API key esté configurada
+  if (!API_KEY) {
+    console.error('❌ FORTNITE_API_KEY no está configurada');
+    return NextResponse.json(
+      { 
+        error: 'API key no configurada',
+        details: 'Configura FORTNITE_API_KEY en Vercel'
+      },
+      { status: 500 }
+    );
+  }
 
   try {
     console.log('🔄 Making request to FortniteAPI.io...');
@@ -24,24 +37,20 @@ export async function GET() {
       const errorText = await response.text();
       console.error('❌ FortniteAPI.io error:', {
         status: response.status,
-        statusText: response.statusText,
-        error: errorText
+        statusText: response.statusText
       });
       
       return NextResponse.json(
         { 
-          error: `Fortnite API error: ${response.status} ${response.statusText}`,
-          details: 'Check API key and permissions'
+          error: `Fortnite API error: ${response.status}`,
+          details: 'Check API key in Vercel'
         },
         { status: 502 }
       );
     }
 
     const data = await response.json();
-    console.log('✅ FortniteAPI.io success:', {
-      result: data.result,
-      itemsCount: data.shop?.length || 0
-    });
+    console.log('✅ FortniteAPI.io success');
 
     return NextResponse.json(data);
 
@@ -51,8 +60,7 @@ export async function GET() {
     return NextResponse.json(
       { 
         error: 'Failed to connect to Fortnite API',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        suggestion: 'Check internet connection and API key'
+        message: 'Check internet connection and API key'
       },
       { status: 500 }
     );
