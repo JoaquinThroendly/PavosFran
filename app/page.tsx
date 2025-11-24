@@ -1,28 +1,38 @@
-// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON NOMBRES E IMÁGENES
+// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON IMÁGENES FUNCIONANDO
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import './styles.css';
 
-// 🔧 FUNCIÓN MEJORADA PARA URLs DE IMÁGENES - MOVIDA AL PRINCIPIO
-const getValidImageUrl = (url: string | undefined): string => {
-  if (!url || url.includes('null') || url === '' || url === 'undefined') {
+// 🔧 FUNCIÓN CORREGIDA PARA URLs DE IMÁGENES
+const getValidImageUrl = (url: string | undefined | null): string => {
+  // Caso 1: URL no válida o vacía
+  if (!url || url.includes('null') || url === '' || url === 'undefined' || url === 'null') {
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
   }
-  
-  if (url.startsWith('http')) {
+
+  // Caso 2: URL completa que ya empieza con http
+  if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  
-  if (url.startsWith('/') || url.startsWith('images/')) {
-    const cleanUrl = url.startsWith('/') ? url : `/${url}`;
-    return `https://fortniteapi.io${cleanUrl}`;
+
+  // Caso 3: URL relativa que empieza con /
+  if (url.startsWith('/')) {
+    // Para Fortnite API, las URLs relativas generalmente apuntan a su CDN
+    return `https://fortniteapi.io${url}`;
   }
-  
-  if (url.includes('fortniteapi.io') || url.includes('cdn2.unrealengine.com')) {
+
+  // Caso 4: URL sin slash inicial pero que parece una ruta
+  if (url.includes('images/') || url.includes('icon') || url.includes('small')) {
+    return `https://fortniteapi.io/${url}`;
+  }
+
+  // Caso 5: Data URL (ya codificada)
+  if (url.startsWith('data:')) {
     return url;
   }
-  
+
+  // Caso por defecto: imagen placeholder
   return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
 };
 
@@ -381,7 +391,38 @@ const debugItemStructure = (items: any[]) => {
   console.log('🔍 === FIN DEBUG ITEM ===');
 };
 
-// Función auxiliar externa para procesar items - MEJORADA PARA NOMBRES E IMÁGENES
+// Función para debuggear estructura de imágenes
+const debugImageStructure = (items: any[]) => {
+  console.log('🖼️ === DEBUG IMAGE STRUCTURE ===');
+  
+  if (!items || !Array.isArray(items)) {
+    console.log('❌ No hay items para debuggear imágenes');
+    return;
+  }
+
+  items.slice(0, 3).forEach((item, index) => {
+    console.log(`🖼️ Item ${index} - "${item?.name || 'Sin nombre'}"`);
+    console.log('   Images object:', item?.images);
+    console.log('   Icon directo:', item?.icon);
+    
+    if (item?.images) {
+      console.log('   Keys en images:', Object.keys(item.images));
+      console.log('   icon:', item.images.icon);
+      console.log('   featured:', item.images.featured);
+      console.log('   smallIcon:', item.images.smallIcon);
+      console.log('   background:', item.images.background);
+    }
+    
+    // Probar la función getValidImageUrl
+    const testUrl = item?.images?.icon;
+    console.log('   URL original:', testUrl);
+    console.log('   URL procesada:', getValidImageUrl(testUrl));
+  });
+  
+  console.log('🖼️ === FIN DEBUG IMAGE ===');
+};
+
+// Función auxiliar externa para procesar items - MEJORADA PARA IMÁGENES
 const processItemsArray = (items: any[]): FortniteItem[] => {
   if (!items || !Array.isArray(items)) {
     console.warn('⚠️ processItemsArray: items no es un array válido', items);
@@ -396,7 +437,7 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
     try {
       const itemPrice = Number(extractPrice(item)) || 0;
 
-      // ✅ CORRECCIÓN: Buscar nombre en diferentes propiedades
+      // Buscar nombre en diferentes propiedades
       const itemName = 
         item.name || 
         item.displayName || 
@@ -404,17 +445,41 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
         item.itemName ||
         `Item ${item.id || index}`;
 
-      // ✅ CORRECCIÓN: Buscar descripción en diferentes propiedades
+      // Buscar descripción en diferentes propiedades
       const itemDescription = 
         item.description || 
         item.displayDescription || 
         item.introductionText || 
         'Fortnite Item';
 
-      // ✅ CORRECCIÓN: Buscar imágenes en diferentes estructuras
+      // 🔧 CORRECCIÓN MEJORADA: Buscar imágenes en diferentes estructuras
       const itemImages = item.images || item.itemImages || item.icon || {};
+      
+      // Obtener URL de imagen principal
+      let mainImage = '';
+      
+      // Prioridad para buscar la imagen
+      if (itemImages.icon) {
+        mainImage = itemImages.icon;
+      } else if (itemImages.featured) {
+        mainImage = itemImages.featured;
+      } else if (itemImages.smallIcon) {
+        mainImage = itemImages.smallIcon;
+      } else if (itemImages.background) {
+        mainImage = itemImages.background;
+      } else if (item.icon) {
+        mainImage = item.icon;
+      } else if (itemImages.url) {
+        mainImage = itemImages.url;
+      }
 
-      return {
+      console.log(`🖼️ Procesando imagen para "${itemName}":`, {
+        original: mainImage,
+        procesada: getValidImageUrl(mainImage),
+        tieneImagen: !!mainImage
+      });
+
+      const processedItem: FortniteItem = {
         id: item.id || `item-${index}-${Date.now()}`,
         name: itemName,
         description: itemDescription,
@@ -425,23 +490,9 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
           backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
         },
         images: {
-          icon: getValidImageUrl(
-            itemImages.icon || 
-            itemImages.smallIcon || 
-            itemImages.featured || 
-            item.icon || 
-            itemImages.url
-          ),
-          featured: getValidImageUrl(
-            itemImages.featured || 
-            itemImages.largeIcon || 
-            itemImages.background || 
-            itemImages.icon
-          ),
-          background: getValidImageUrl(
-            itemImages.background || 
-            itemImages.featured
-          )
+          icon: getValidImageUrl(mainImage),
+          featured: getValidImageUrl(itemImages.featured || itemImages.largeIcon || mainImage),
+          background: getValidImageUrl(itemImages.background || itemImages.featured)
         },
         type: {
           value: item.type?.value || item.type?.id || item.itemType || 'outfit',
@@ -449,6 +500,8 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
           backendValue: item.type?.backendValue || item.type?.id || item.itemType || 'AthenaCharacter'
         }
       };
+
+      return processedItem;
     } catch (error) {
       console.error(`❌ Error en processItemsArray para item ${index}:`, error, item);
       return createFallbackItem(index);
@@ -477,7 +530,7 @@ const getRarityColor = (rarity: string): string => {
   return rarityColors[rarity.toLowerCase()] || '#888888';
 };
 
-// 🔧 FUNCIÓN DE PROCESAMIENTO MEJORADA - VERSIÓN NOMBRES E IMÁGENES
+// 🔧 FUNCIÓN DE PROCESAMIENTO MEJORADA - VERSIÓN IMÁGENES CORREGIDA
 const processFortniteApiData = (apiData: any): FortniteShop => {
   console.log('🔧 Procesando datos de la API...', apiData);
 
@@ -551,10 +604,13 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
     };
   }
 
-  // 🔍 DEBUG: Mostrar estructura completa del primer item
+  // 🔍 DEBUG: Mostrar estructura completa
   if (items.length > 0) {
     console.log('🔍 DEBUG - Estructura completa del primer item:', items[0]);
     console.log('🔍 DEBUG - Keys del primer item:', Object.keys(items[0]));
+    debugPriceStructure(items);
+    debugItemStructure(items);
+    debugImageStructure(items);
   }
 
   // Procesar todos los items encontrados
@@ -564,7 +620,7 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
     try {
       const itemPrice = Number(extractPrice(item)) || 0;
 
-      // ✅ CORRECCIÓN: Buscar nombre en diferentes propiedades
+      // Buscar nombre en diferentes propiedades
       const itemName = 
         item.name || 
         item.displayName || 
@@ -572,16 +628,34 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
         item.itemName ||
         `Item ${item.id || index}`;
 
-      // ✅ CORRECCIÓN: Buscar descripción en diferentes propiedades
+      // Buscar descripción en diferentes propiedades
       const itemDescription = 
         item.description || 
         item.displayDescription || 
         item.introductionText || 
         'Fortnite Item';
 
-      // ✅ CORRECCIÓN: Buscar imágenes en diferentes estructuras
+      // 🔧 CORRECCIÓN MEJORADA: Buscar imágenes en diferentes estructuras
       const itemImages = item.images || item.itemImages || item.icon || {};
       
+      // Obtener URL de imagen principal
+      let mainImage = '';
+      
+      // Prioridad para buscar la imagen
+      if (itemImages.icon) {
+        mainImage = itemImages.icon;
+      } else if (itemImages.featured) {
+        mainImage = itemImages.featured;
+      } else if (itemImages.smallIcon) {
+        mainImage = itemImages.smallIcon;
+      } else if (itemImages.background) {
+        mainImage = itemImages.background;
+      } else if (item.icon) {
+        mainImage = item.icon;
+      } else if (itemImages.url) {
+        mainImage = itemImages.url;
+      }
+
       const processedItem: FortniteItem = {
         id: item.id || `item-${index}-${Date.now()}`,
         name: itemName,
@@ -593,23 +667,9 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
           backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
         },
         images: {
-          icon: getValidImageUrl(
-            itemImages.icon || 
-            itemImages.smallIcon || 
-            itemImages.featured || 
-            item.icon || 
-            itemImages.url
-          ),
-          featured: getValidImageUrl(
-            itemImages.featured || 
-            itemImages.largeIcon || 
-            itemImages.background || 
-            itemImages.icon
-          ),
-          background: getValidImageUrl(
-            itemImages.background || 
-            itemImages.featured
-          )
+          icon: getValidImageUrl(mainImage),
+          featured: getValidImageUrl(itemImages.featured || itemImages.largeIcon || mainImage),
+          background: getValidImageUrl(itemImages.background || itemImages.featured)
         },
         type: {
           value: item.type?.value || item.type?.id || item.itemType || 'outfit',
@@ -889,7 +949,8 @@ const HomePage: React.FC = () => {
         
         if (debugItems.length > 0) {
           debugPriceStructure(debugItems);
-          debugItemStructure(debugItems); // ✅ NUEVO DEBUG
+          debugItemStructure(debugItems);
+          debugImageStructure(debugItems); // ✅ DEBUG DE IMÁGENES AÑADIDO
         }
         
         const processedShop = processFortniteApiData(data);
@@ -1444,6 +1505,7 @@ const HomePage: React.FC = () => {
                             className="item-image"
                             loading="lazy"
                             onError={(e) => {
+                              console.warn(`❌ Error cargando imagen para ${item.name}:`, item.images.icon);
                               (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
                             }}
                           />
@@ -1504,6 +1566,7 @@ const HomePage: React.FC = () => {
                             className="item-image"
                             loading="lazy"
                             onError={(e) => {
+                              console.warn(`❌ Error cargando imagen para ${item.name}:`, item.images.icon);
                               (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
                             }}
                           />
