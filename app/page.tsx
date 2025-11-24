@@ -1,39 +1,25 @@
-// app/page.tsx - VERSIÓN COMPLETA CORREGIDA CON IMÁGENES FUNCIONANDO
+// app/page.tsx - VERSIÓN CON PROXY PARA IMÁGENES
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import './styles.css';
 
-// 🔧 FUNCIÓN CORREGIDA PARA URLs DE IMÁGENES
+// 🔧 FUNCIÓN MEJORADA CON PROXY PARA IMÁGENES
 const getValidImageUrl = (url: string | undefined | null): string => {
   // Caso 1: URL no válida o vacía
   if (!url || url.includes('null') || url === '' || url === 'undefined' || url === 'null') {
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+    return '/api/image-proxy?url=placeholder';
   }
 
-  // Caso 2: URL completa que ya empieza con http
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url;
-  }
-
-  // Caso 3: URL relativa que empieza con /
-  if (url.startsWith('/')) {
-    // Para Fortnite API, las URLs relativas generalmente apuntan a su CDN
-    return `https://fortniteapi.io${url}`;
-  }
-
-  // Caso 4: URL sin slash inicial pero que parece una ruta
-  if (url.includes('images/') || url.includes('icon') || url.includes('small')) {
-    return `https://fortniteapi.io/${url}`;
-  }
-
-  // Caso 5: Data URL (ya codificada)
+  // Caso 2: Ya es una data URL
   if (url.startsWith('data:')) {
     return url;
   }
 
-  // Caso por defecto: imagen placeholder
-  return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+  // Caso 3: Usar proxy para todas las imágenes externas
+  // Codificar la URL para pasarla como parámetro
+  const encodedUrl = encodeURIComponent(url);
+  return `/api/image-proxy?url=${encodedUrl}`;
 };
 
 // Textos traducidos COMPLETOS
@@ -261,7 +247,7 @@ const createFallbackItem = (index: number): FortniteItem => ({
     backendValue: 'Common'
   },
   images: {
-    icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5FcnJvcjwvdGV4dD4KPC9zdmc+'
+    icon: '/api/image-proxy?url=placeholder'
   },
   type: {
     value: 'outfit',
@@ -290,139 +276,7 @@ const extractPrice = (item: any): number => {
   return item.finalPrice || item.regularPrice || item.cost || item.price || 0;
 };
 
-// Función temporal para debuggear la estructura de la API
-const debugApiStructure = (apiData: any) => {
-  console.log('🔍 === DEBUG API STRUCTURE ===');
-  
-  if (!apiData) {
-    console.log('❌ API data es null o undefined');
-    return;
-  }
-
-  console.log('📊 Tipo de dato:', typeof apiData);
-  console.log('🔑 Keys principales:', Object.keys(apiData));
-
-  const arrayKeys = Object.keys(apiData).filter(key => 
-    Array.isArray(apiData[key]) && apiData[key].length > 0
-  );
-
-  console.log('📦 Arrays encontrados:', arrayKeys);
-
-  arrayKeys.forEach(key => {
-    const array = apiData[key];
-    console.log(`📋 Array "${key}": ${array.length} items`);
-    
-    if (array.length > 0) {
-      const sample = array[0];
-      console.log(`📝 Ejemplo del primer item en "${key}":`, {
-        id: sample.id,
-        name: sample.name,
-        type: sample.type,
-        section: sample.section,
-        rarity: sample.rarity,
-        price: sample.finalPrice || sample.regularPrice,
-        images: sample.images
-      });
-    }
-  });
-
-  console.log('🔍 === FIN DEBUG ===');
-};
-
-// Función para debuggear estructura de precios
-const debugPriceStructure = (items: any[]) => {
-  console.log('💰 === DEBUG PRICE STRUCTURE ===');
-  
-  if (!items || !Array.isArray(items)) {
-    console.log('❌ No hay items para debuggear');
-    return;
-  }
-
-  items.slice(0, 3).forEach((item, index) => {
-    console.log(`💰 Item ${index} - "${item?.name || 'Sin nombre'}"`);
-    console.log('   Precio directo:', item?.price);
-    console.log('   FinalPrice:', item?.finalPrice);
-    console.log('   RegularPrice:', item?.regularPrice);
-    console.log('   Cost:', item?.cost);
-    console.log('   Tipo de precio:', typeof item?.price);
-    
-    if (item?.price && typeof item.price === 'object') {
-      console.log('   🔍 Estructura del objeto precio:', item.price);
-    }
-    
-    const extractedPrice = extractPrice(item);
-    console.log('   ✅ Precio extraído:', extractedPrice, '(Tipo:', typeof extractedPrice + ')');
-  });
-  
-  console.log('💰 === FIN DEBUG PRICE ===');
-};
-
-// Función mejorada para debuggear estructura de items
-const debugItemStructure = (items: any[]) => {
-  console.log('🔍 === DEBUG ITEM STRUCTURE ===');
-  
-  if (!items || !Array.isArray(items)) {
-    console.log('❌ No hay items para debuggear');
-    return;
-  }
-
-  items.slice(0, 3).forEach((item, index) => {
-    console.log(`🔍 Item ${index}:`);
-    console.log('   ID:', item?.id);
-    console.log('   Nombre (name):', item?.name);
-    console.log('   Display Name:', item?.displayName);
-    console.log('   Title:', item?.title);
-    console.log('   Item Name:', item?.itemName);
-    console.log('   Descripción:', item?.description);
-    console.log('   Display Description:', item?.displayDescription);
-    console.log('   Images:', item?.images);
-    console.log('   Icon:', item?.icon);
-    console.log('   Rarity:', item?.rarity);
-    console.log('   Type:', item?.type);
-    console.log('   Section:', item?.section);
-    console.log('   Featured:', item?.featured);
-    
-    // Mostrar todas las keys disponibles
-    if (item) {
-      console.log('   🔑 Todas las keys:', Object.keys(item));
-    }
-  });
-  
-  console.log('🔍 === FIN DEBUG ITEM ===');
-};
-
-// Función para debuggear estructura de imágenes
-const debugImageStructure = (items: any[]) => {
-  console.log('🖼️ === DEBUG IMAGE STRUCTURE ===');
-  
-  if (!items || !Array.isArray(items)) {
-    console.log('❌ No hay items para debuggear imágenes');
-    return;
-  }
-
-  items.slice(0, 3).forEach((item, index) => {
-    console.log(`🖼️ Item ${index} - "${item?.name || 'Sin nombre'}"`);
-    console.log('   Images object:', item?.images);
-    console.log('   Icon directo:', item?.icon);
-    
-    if (item?.images) {
-      console.log('   Keys en images:', Object.keys(item.images));
-      console.log('   icon:', item.images.icon);
-      console.log('   featured:', item.images.featured);
-      console.log('   smallIcon:', item.images.smallIcon);
-      console.log('   background:', item.images.background);
-    }
-    
-    // Probar la función getValidImageUrl
-    const testUrl = item?.images?.icon;
-    console.log('   URL original:', testUrl);
-    console.log('   URL procesada:', getValidImageUrl(testUrl));
-  });
-  
-  console.log('🖼️ === FIN DEBUG IMAGE ===');
-};
-
-// Función auxiliar externa para procesar items - MEJORADA PARA IMÁGENES
+// Función auxiliar externa para procesar items - SIMPLIFICADA
 const processItemsArray = (items: any[]): FortniteItem[] => {
   if (!items || !Array.isArray(items)) {
     console.warn('⚠️ processItemsArray: items no es un array válido', items);
@@ -452,31 +306,13 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
         item.introductionText || 
         'Fortnite Item';
 
-      // 🔧 CORRECCIÓN MEJORADA: Buscar imágenes en diferentes estructuras
-      const itemImages = item.images || item.itemImages || item.icon || {};
-      
-      // Obtener URL de imagen principal
-      let mainImage = '';
-      
-      // Prioridad para buscar la imagen
-      if (itemImages.icon) {
-        mainImage = itemImages.icon;
-      } else if (itemImages.featured) {
-        mainImage = itemImages.featured;
-      } else if (itemImages.smallIcon) {
-        mainImage = itemImages.smallIcon;
-      } else if (itemImages.background) {
-        mainImage = itemImages.background;
-      } else if (item.icon) {
-        mainImage = item.icon;
-      } else if (itemImages.url) {
-        mainImage = itemImages.url;
-      }
+      // Buscar imagen principal - enfoque simplificado
+      const itemImages = item.images || item.itemImages || {};
+      let mainImage = itemImages.icon || itemImages.featured || itemImages.smallIcon || item.icon || '';
 
-      console.log(`🖼️ Procesando imagen para "${itemName}":`, {
+      console.log(`🖼️ Imagen para "${itemName}":`, {
         original: mainImage,
-        procesada: getValidImageUrl(mainImage),
-        tieneImagen: !!mainImage
+        procesada: getValidImageUrl(mainImage)
       });
 
       const processedItem: FortniteItem = {
@@ -491,8 +327,8 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
         },
         images: {
           icon: getValidImageUrl(mainImage),
-          featured: getValidImageUrl(itemImages.featured || itemImages.largeIcon || mainImage),
-          background: getValidImageUrl(itemImages.background || itemImages.featured)
+          featured: getValidImageUrl(itemImages.featured),
+          background: getValidImageUrl(itemImages.background)
         },
         type: {
           value: item.type?.value || item.type?.id || item.itemType || 'outfit',
@@ -530,9 +366,9 @@ const getRarityColor = (rarity: string): string => {
   return rarityColors[rarity.toLowerCase()] || '#888888';
 };
 
-// 🔧 FUNCIÓN DE PROCESAMIENTO MEJORADA - VERSIÓN IMÁGENES CORREGIDA
+// 🔧 FUNCIÓN DE PROCESAMIENTO SIMPLIFICADA
 const processFortniteApiData = (apiData: any): FortniteShop => {
-  console.log('🔧 Procesando datos de la API...', apiData);
+  console.log('🔧 Procesando datos de la API...');
 
   const dailyItems: FortniteItem[] = [];
   const featuredItems: FortniteItem[] = [];
@@ -559,26 +395,12 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
       source: 'api'
     };
   }
-  // Caso 4: Estructura con currentRotation
-  else if (apiData.currentRotation) {
-    console.log('📦 Usando estructura: currentRotation');
-    if (apiData.currentRotation.featured && apiData.currentRotation.daily) {
-      return {
-        daily: processItemsArray(apiData.currentRotation.daily),
-        featured: processItemsArray(apiData.currentRotation.featured),
-        lastUpdate: new Date().toISOString(),
-        source: 'api'
-      };
-    } else {
-      items = apiData.currentRotation;
-    }
-  }
-  // Caso 5: Array directo
+  // Caso 4: Array directo
   else if (Array.isArray(apiData)) {
     items = apiData;
     console.log('📦 Usando estructura: array directo');
   }
-  // Caso 6: Buscar cualquier array en el objeto
+  // Caso 5: Buscar cualquier array en el objeto
   else {
     for (const key in apiData) {
       if (Array.isArray(apiData[key]) && apiData[key].length > 0) {
@@ -604,121 +426,19 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
     };
   }
 
-  // 🔍 DEBUG: Mostrar estructura completa
-  if (items.length > 0) {
-    console.log('🔍 DEBUG - Estructura completa del primer item:', items[0]);
-    console.log('🔍 DEBUG - Keys del primer item:', Object.keys(items[0]));
-    debugPriceStructure(items);
-    debugItemStructure(items);
-    debugImageStructure(items);
-  }
-
   // Procesar todos los items encontrados
-  items.forEach((item: any, index: number) => {
-    if (!item) return;
+  const processedItems = processItemsArray(items);
 
-    try {
-      const itemPrice = Number(extractPrice(item)) || 0;
-
-      // Buscar nombre en diferentes propiedades
-      const itemName = 
-        item.name || 
-        item.displayName || 
-        item.title || 
-        item.itemName ||
-        `Item ${item.id || index}`;
-
-      // Buscar descripción en diferentes propiedades
-      const itemDescription = 
-        item.description || 
-        item.displayDescription || 
-        item.introductionText || 
-        'Fortnite Item';
-
-      // 🔧 CORRECCIÓN MEJORADA: Buscar imágenes en diferentes estructuras
-      const itemImages = item.images || item.itemImages || item.icon || {};
-      
-      // Obtener URL de imagen principal
-      let mainImage = '';
-      
-      // Prioridad para buscar la imagen
-      if (itemImages.icon) {
-        mainImage = itemImages.icon;
-      } else if (itemImages.featured) {
-        mainImage = itemImages.featured;
-      } else if (itemImages.smallIcon) {
-        mainImage = itemImages.smallIcon;
-      } else if (itemImages.background) {
-        mainImage = itemImages.background;
-      } else if (item.icon) {
-        mainImage = item.icon;
-      } else if (itemImages.url) {
-        mainImage = itemImages.url;
-      }
-
-      const processedItem: FortniteItem = {
-        id: item.id || `item-${index}-${Date.now()}`,
-        name: itemName,
-        description: itemDescription,
-        price: itemPrice,
-        rarity: {
-          value: item.rarity?.id || item.rarity?.value || item.rarity?.name?.toLowerCase() || 'common',
-          displayValue: item.rarity?.name || item.rarity?.displayValue || item.rarity?.value || 'Common',
-          backendValue: item.rarity?.backendValue || item.rarity?.id || 'Common'
-        },
-        images: {
-          icon: getValidImageUrl(mainImage),
-          featured: getValidImageUrl(itemImages.featured || itemImages.largeIcon || mainImage),
-          background: getValidImageUrl(itemImages.background || itemImages.featured)
-        },
-        type: {
-          value: item.type?.value || item.type?.id || item.itemType || 'outfit',
-          displayValue: item.type?.displayValue || item.type?.name || item.itemType || 'Skin',
-          backendValue: item.type?.backendValue || item.type?.id || item.itemType || 'AthenaCharacter'
-        }
-      };
-
-      // Clasificación mejorada
-      const isFeatured = 
-        item.section?.id === 'featured' ||
-        item.sectionId === 'featured' ||
-        item.section?.name?.toLowerCase().includes('featured') ||
-        item.featured === true ||
-        item.bFeatured === true ||
-        item.isFeatured === true ||
-        ['legendary', 'epic', 'marvel', 'icon', 'lava', 'frozen', 'shadow', 'dc', 'dark'].includes(item.rarity?.id?.toLowerCase()) ||
-        ['legendary', 'epic', 'marvel', 'icon', 'lava', 'frozen', 'shadow', 'dc', 'dark'].includes(item.rarity?.value?.toLowerCase()) ||
-        (item.rarity && ['legendary', 'epic'].includes(item.rarity.value?.toLowerCase()));
-
-      if (isFeatured && featuredItems.length < 12) {
-        featuredItems.push(processedItem);
-        // Log del primer item featured procesado
-        if (featuredItems.length === 1) {
-          console.log('⭐ Primer featured item procesado:', {
-            name: processedItem.name,
-            price: processedItem.price,
-            rarity: processedItem.rarity.displayValue,
-            image: processedItem.images.icon
-          });
-        }
-      } else if (dailyItems.length < 12) {
-        dailyItems.push(processedItem);
-      }
-
-    } catch (error) {
-      console.error(`❌ Error procesando item ${index}:`, error, item);
+  // Clasificar items (simplificado)
+  processedItems.forEach((item) => {
+    if (featuredItems.length < 8 && item.price > 800) {
+      featuredItems.push(item);
+    } else if (dailyItems.length < 8) {
+      dailyItems.push(item);
     }
   });
 
   console.log(`✅ Procesado final: ${featuredItems.length} featured, ${dailyItems.length} daily`);
-  
-  // Log detallado de los primeros items
-  if (featuredItems.length > 0) {
-    console.log('📝 Detalles del primer featured item:', featuredItems[0]);
-  }
-  if (dailyItems.length > 0) {
-    console.log('📝 Detalles del primer daily item:', dailyItems[0]);
-  }
 
   return {
     daily: dailyItems,
@@ -739,7 +459,7 @@ const createRealisticMockShopData = (): FortniteShop => {
       description: 'Caballero legendario con armadura cibernética',
       price: 1500,
       rarity: { value: 'legendary', displayValue: 'Legendario', backendValue: 'Legendary' },
-      images: { icon: '/img/placeholder.webp' },
+      images: { icon: '/api/image-proxy?url=placeholder' },
       type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
     },
     {
@@ -748,32 +468,14 @@ const createRealisticMockShopData = (): FortniteShop => {
       description: 'Skin épica con efectos oceánicos',
       price: 1200,
       rarity: { value: 'epic', displayValue: 'Épico', backendValue: 'Epic' },
-      images: { icon: '/img/placeholder.webp' },
+      images: { icon: '/api/image-proxy?url=placeholder' },
       type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
-    },
-    {
-      id: 'mock-daily-1',
-      name: 'Rust Lord',
-      description: 'Skin clásica de astronauta',
-      price: 800,
-      rarity: { value: 'rare', displayValue: 'Raro', backendValue: 'Rare' },
-      images: { icon: '/img/placeholder.webp' },
-      type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
-    },
-    {
-      id: 'mock-daily-2',
-      name: 'Bubble Popper',
-      description: 'Emote divertido de burbujas',
-      price: 300,
-      rarity: { value: 'uncommon', displayValue: 'Poco Común', backendValue: 'Uncommon' },
-      images: { icon: '/img/placeholder.webp' },
-      type: { value: 'emote', displayValue: 'Baile', backendValue: 'AthenaDance' }
     }
   ];
 
   return {
-    daily: mockItems.slice(2),
-    featured: mockItems.slice(0, 2),
+    daily: mockItems,
+    featured: mockItems,
     lastUpdate: currentDate.toISOString(),
     source: 'mock'
   };
@@ -915,54 +617,32 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // 🔄 FUNCIÓN MEJORADA - CON MÁS MANEJO DE ERRORES
+  // 🔄 FUNCIÓN SIMPLIFICADA PARA CARGAR LA TIENDA
   const fetchFortniteShop = async (forceRefresh = false) => {
     if (shopLoading && !forceRefresh) return;
     
     setShopLoading(true);
     setShopError(null);
-    console.log('🚀 INICIANDO fetchFortniteShop...');
     
     try {
       const response = await fetch('/api/fortnite-shop?' + new URLSearchParams({
         _t: Date.now().toString()
-      }), {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('📡 Respuesta HTTP:', response.status, response.statusText);
+      }));
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Datos recibidos del backend:', data);
-        
-        debugApiStructure(data);
-        
-        // Encontrar items para debug
-        let debugItems: any[] = [];
-        if (data.data && data.data.shop) debugItems = data.data.shop;
-        else if (data.shop) debugItems = data.shop;
-        else if (data.featured) debugItems = data.featured;
-        
-        if (debugItems.length > 0) {
-          debugPriceStructure(debugItems);
-          debugItemStructure(debugItems);
-          debugImageStructure(debugItems); // ✅ DEBUG DE IMÁGENES AÑADIDO
-        }
+        console.log('✅ Datos recibidos del backend');
         
         const processedShop = processFortniteApiData(data);
         setFortniteShop({...processedShop, source: 'api'});
         setShopError(null);
         
       } else {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}`);
       }
       
     } catch (error) {
-      console.error('💥 ERROR:', error);
+      console.error('💥 ERROR cargando tienda:', error);
       
       const mockShopData = createRealisticMockShopData();
       setFortniteShop({...mockShopData, source: 'mock'});
@@ -1075,15 +755,6 @@ const HomePage: React.FC = () => {
       clearInterval(carouselInterval);
     };
   }, []);
-
-  // Debug useEffect para verificar estado de fortniteShop
-  useEffect(() => {
-    console.log('🔄 Estado fortniteShop actualizado:', fortniteShop);
-    if (fortniteShop) {
-      console.log('📊 Featured items:', fortniteShop.featured);
-      console.log('📊 Daily items:', fortniteShop.daily);
-    }
-  }, [fortniteShop]);
 
   // Cargar idioma preferido
   useEffect(() => {
@@ -1405,7 +1076,7 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* SECCIÓN TIENDA FORTNITE - COMPLETAMENTE CORREGIDA */}
+      {/* SECCIÓN TIENDA FORTNITE - CON PROXY DE IMÁGENES */}
       {activeSection === 'fortnite-shop' && (
         <section className="section fortnite-shop-section">
           <div className="shop-header">
@@ -1426,24 +1097,6 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* DEBUG INFO TEMPORAL */}
-          <div className="debug-info">
-            <h4>🔍 DEBUG INFO:</h4>
-            <p><strong>Estado carga:</strong> {shopLoading ? '🔄 CARGANDO...' : '✅ LISTO'}</p>
-            <p><strong>Error:</strong> {shopError || '❌ No hay error'}</p>
-            <p><strong>Datos FortniteShop:</strong> {fortniteShop ? '✅ EXISTE' : '❌ NULL'}</p>
-            <p><strong>Items destacados:</strong> {fortniteShop ? fortniteShop.featured.length : 0}</p>
-            <p><strong>Items diarios:</strong> {fortniteShop ? fortniteShop.daily.length : 0}</p>
-            <p><strong>Fuente:</strong> {fortniteShop?.source || 'N/A'}</p>
-            <button 
-              onClick={() => fetchFortniteShop(true)}
-              className="btn"
-              style={{background: '#ffd700', color: 'black', marginTop: '0.5rem'}}
-            >
-              🔄 Forzar Recarga Manual
-            </button>
-          </div>
-
           {/* Información de estado de la API */}
           <div className="api-status">
             <div className="status-indicator">
@@ -1461,13 +1114,6 @@ const HomePage: React.FC = () => {
                 <small>
                   {fortniteShop.daily.length} {t.dailyItems} • {fortniteShop.featured.length} {t.featuredItems}
                   {fortniteShop.source === 'mock' && ' • (Modo demostración)'}
-                </small>
-              </div>
-            )}
-            {shopError && (
-              <div className="status-help">
-                <small>
-                  {shopError}
                 </small>
               </div>
             )}
@@ -1505,8 +1151,8 @@ const HomePage: React.FC = () => {
                             className="item-image"
                             loading="lazy"
                             onError={(e) => {
-                              console.warn(`❌ Error cargando imagen para ${item.name}:`, item.images.icon);
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+                              console.warn(`❌ Error cargando imagen para ${item.name}`);
+                              (e.target as HTMLImageElement).src = '/api/image-proxy?url=placeholder';
                             }}
                           />
                           <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
@@ -1566,8 +1212,8 @@ const HomePage: React.FC = () => {
                             className="item-image"
                             loading="lazy"
                             onError={(e) => {
-                              console.warn(`❌ Error cargando imagen para ${item.name}:`, item.images.icon);
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+                              console.warn(`❌ Error cargando imagen para ${item.name}`);
+                              (e.target as HTMLImageElement).src = '/api/image-proxy?url=placeholder';
                             }}
                           />
                           <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
