@@ -1,22 +1,32 @@
-// app/page.tsx - VERSIÓN COMPLETA CORREGIDA Y MEJORADA
+// app/page.tsx - VERSIÓN COMPLETA CON CARRUSELES Y TODOS LOS ITEMS
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
 
-// 🔧 FUNCIÓN MEJORADA PARA IMÁGENES
+// 🔧 FUNCIÓN MEJORADA PARA IMÁGENES DE FORTNITE
 const getValidImageUrl = (url: string | undefined | null): string => {
   if (!url || url.includes('null') || url === '' || url === 'undefined') {
     return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
   }
   
-  // Usar URLs directas
+  // Si ya es una URL completa
   if (url.startsWith('http')) {
     return url;
   }
   
+  // Si es una ruta relativa de Fortnite API
   if (url.startsWith('/')) {
-    return `https://fortniteapi.io${url}`;
+    // Asegurar que use el dominio correcto
+    if (url.includes('media.fortniteapi.io')) {
+      return url;
+    }
+    return `https://media.fortniteapi.io${url}`;
+  }
+  
+  // Si parece ser un ID de cosmetico
+  if (url.includes('icon') || url.includes('featured') || url.includes('.png') || url.includes('.jpg')) {
+    return `https://media.fortniteapi.io/images/${url}`;
   }
   
   return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
@@ -92,7 +102,16 @@ const translations = {
     realTimeData: "Real-time data",
     demoData: "Demo data",
     connecting: "Connecting to API...",
-    menu: "Menu"
+    menu: "Menu",
+    viewAll: "View All",
+    previous: "Previous",
+    next: "Next",
+    slide: "Slide",
+    allItems: "All Items",
+    filterByRarity: "Filter by Rarity",
+    allRarities: "All Rarities",
+    categories: "Categories",
+    totalItems: "Total Items"
   },
   es: {
     home: "Inicio",
@@ -162,16 +181,25 @@ const translations = {
     realTimeData: "Datos en tiempo real",
     demoData: "Datos de demostración",
     connecting: "Conectando a API...",
-    menu: "Menú"
+    menu: "Menú",
+    viewAll: "Ver Todos",
+    previous: "Anterior",
+    next: "Siguiente",
+    slide: "Diapositiva",
+    allItems: "Todos los Items",
+    filterByRarity: "Filtrar por Rareza",
+    allRarities: "Todas las Rarezas",
+    categories: "Categorías",
+    totalItems: "Items Totales"
   }
 };
 
-// Tasas de cambio predeterminadas ACTUALIZADAS
+// Tasas de cambio predeterminadas
 const defaultExchangeRates = {
   USD: 1,
   EUR: 0.92,
   MXN: 16.80,
-  ARS: 1450, // Valor actualizado para Argentina
+  ARS: 1450,
   BRL: 5.05,
   CLP: 920,
   COP: 3900,
@@ -223,6 +251,7 @@ interface FortniteItem {
 }
 
 interface FortniteShop {
+  allItems: FortniteItem[];
   daily: FortniteItem[];
   featured: FortniteItem[];
   lastUpdate: string;
@@ -250,11 +279,10 @@ const createFallbackItem = (index: number): FortniteItem => ({
   }
 });
 
-// Función para extraer precio MEJORADA
+// Función para extraer precio
 const extractPrice = (item: any): number => {
   if (!item) return 0;
   
-  // Buscar precio en diferentes estructuras
   if (item.finalPrice) return item.finalPrice;
   if (item.regularPrice) return item.regularPrice;
   if (item.price) {
@@ -266,7 +294,7 @@ const extractPrice = (item: any): number => {
   return 0;
 };
 
-// Función auxiliar MEJORADA para procesar items
+// Función auxiliar para procesar items
 const processItemsArray = (items: any[]): FortniteItem[] => {
   if (!items || !Array.isArray(items)) {
     return [];
@@ -291,7 +319,6 @@ const processItemsArray = (items: any[]): FortniteItem[] => {
         item.displayDescription || 
         'Fortnite Item';
 
-      // Búsqueda MEJORADA de imágenes
       const itemImages = item.images || item.itemImages || {};
       let mainImage = itemImages.icon || itemImages.featured || itemImages.smallIcon || '';
 
@@ -344,13 +371,12 @@ const getRarityColor = (rarity: string): string => {
   return rarityColors[rarity.toLowerCase()] || '#888888';
 };
 
-// Función de procesamiento MEJORADA
+// Función de procesamiento SIN LÍMITES
 const processFortniteApiData = (apiData: any): FortniteShop => {
   console.log('🔧 Procesando datos de la API...');
   
   let items: any[] = [];
 
-  // Búsqueda MEJORADA de items en la estructura de la API
   if (apiData.data && apiData.data.shop) {
     items = apiData.data.shop;
     console.log('📦 Usando estructura: data.shop');
@@ -358,13 +384,8 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
     items = apiData.shop;
     console.log('📦 Usando estructura: shop');
   } else if (apiData.featured && apiData.daily) {
-    console.log('📦 Usando estructura: featured/daily separados');
-    return {
-      daily: processItemsArray(apiData.daily),
-      featured: processItemsArray(apiData.featured),
-      lastUpdate: new Date().toISOString(),
-      source: 'api'
-    };
+    items = [...(apiData.featured || []), ...(apiData.daily || [])];
+    console.log('📦 Combinando featured y daily');
   } else if (apiData.featured) {
     items = apiData.featured;
     console.log('📦 Usando estructura: featured');
@@ -377,6 +398,7 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
 
   if (items.length === 0) {
     return {
+      allItems: [],
       daily: [],
       featured: [],
       lastUpdate: new Date().toISOString(),
@@ -385,25 +407,27 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
   }
 
   const processedItems = processItemsArray(items);
+  
   const featuredItems: FortniteItem[] = [];
   const dailyItems: FortniteItem[] = [];
 
-  // Clasificación MEJORADA
+  // Clasificación SIN límite de cantidad
   processedItems.forEach((item) => {
     const isFeatured = 
       item.price > 1000 || 
       ['legendary', 'epic', 'marvel', 'icon'].includes(item.rarity.value.toLowerCase());
 
-    if (isFeatured && featuredItems.length < 8) {
+    if (isFeatured) {
       featuredItems.push(item);
-    } else if (dailyItems.length < 8) {
+    } else {
       dailyItems.push(item);
     }
   });
 
-  console.log(`✅ Procesado final: ${featuredItems.length} featured, ${dailyItems.length} daily`);
+  console.log(`✅ Procesado final: ${featuredItems.length} featured, ${dailyItems.length} daily, ${processedItems.length} total`);
 
   return {
+    allItems: processedItems,
     daily: dailyItems,
     featured: featuredItems,
     lastUpdate: new Date().toISOString(),
@@ -411,7 +435,7 @@ const processFortniteApiData = (apiData: any): FortniteShop => {
   };
 };
 
-// DATOS DE EJEMPLO MEJORADOS
+// DATOS DE EJEMPLO
 const createRealisticMockShopData = (): FortniteShop => {
   const mockItems = [
     {
@@ -422,19 +446,11 @@ const createRealisticMockShopData = (): FortniteShop => {
       rarity: { value: 'legendary', displayValue: 'Legendario', backendValue: 'Legendary' },
       images: { icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5PbWVnYSBLbmlnaHQ8L3RleHQ+Cjwvc3ZnPg==' },
       type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
-    },
-    {
-      id: 'mock-2',
-      name: 'Wavebreaker',
-      description: 'Skin épica con efectos oceánicos',
-      price: 1200,
-      rarity: { value: 'epic', displayValue: 'Épico', backendValue: 'Epic' },
-      images: { icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5XYXZlYnJlYWtlcjwvdGV4dD4KPC9zdmc+' },
-      type: { value: 'outfit', displayValue: 'Skin', backendValue: 'AthenaCharacter' }
     }
   ];
 
   return {
+    allItems: mockItems,
     daily: mockItems,
     featured: mockItems,
     lastUpdate: new Date().toISOString(),
@@ -442,6 +458,157 @@ const createRealisticMockShopData = (): FortniteShop => {
   };
 };
 
+// COMPONENTE CARRUSEL PARA ITEMS - CORREGIDO
+interface ItemsCarouselProps {
+  items: FortniteItem[];
+  title: string;
+  itemsPerSlide?: number;
+  currentLanguage: string;
+}
+
+const ItemsCarousel: React.FC<ItemsCarouselProps> = ({ 
+  items, 
+  title, 
+  itemsPerSlide = 4,
+  currentLanguage
+}) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  
+  const t = translations[currentLanguage as keyof typeof translations];
+
+  const totalSlides = Math.ceil(items.length / itemsPerSlide);
+
+  const nextSlide = () => {
+    setCurrentIndex((prev) => (prev + 1) % totalSlides);
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
+  };
+
+  const contactWhatsApp = (productName: string, price: number) => {
+    const phoneNumber = "1234567890";
+    const message = `¡Hola! Estoy interesado en: ${productName} - ${price} Pavos`;
+    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  if (items.length === 0) {
+    return (
+      <div className="carousel-container">
+        <h3 className="neon-text">{title} ({items.length})</h3>
+        <div className="no-items">
+          <p>No hay items disponibles</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Agrupar items en slides
+  const slides = [];
+  for (let i = 0; i < items.length; i += itemsPerSlide) {
+    slides.push(items.slice(i, i + itemsPerSlide));
+  }
+
+  return (
+    <div className="carousel-container">
+      <div className="carousel-header">
+        <h3 className="neon-text">{title} ({items.length})</h3>
+        {totalSlides > 1 && (
+          <div className="carousel-controls">
+            <button onClick={prevSlide} className="carousel-btn">
+              ◀
+            </button>
+            <span className="carousel-counter">
+              {currentIndex + 1} / {totalSlides}
+            </span>
+            <button onClick={nextSlide} className="carousel-btn">
+              ▶
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="carousel-wrapper" ref={carouselRef}>
+        <div 
+          className="carousel-slides"
+          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+        >
+          {slides.map((slideItems, slideIndex) => (
+            <div key={slideIndex} className="carousel-slide">
+              <div className="items-grid">
+                {slideItems.map((item) => (
+                  <div 
+                    key={item.id} 
+                    className="shop-item neon-card carousel-item"
+                    style={{ 
+                      borderColor: getRarityColor(item.rarity.value),
+                      background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
+                    }}
+                  >
+                    <div className="item-image-container">
+                      <img 
+                        src={item.images.icon} 
+                        alt={item.name}
+                        className="item-image"
+                        loading="lazy"
+                        onError={(e) => {
+                          console.warn(`❌ Error cargando imagen para ${item.name}`);
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+                        }}
+                      />
+                      <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
+                    </div>
+                    <div className="item-info">
+                      <h4 className="item-name">{item.name}</h4>
+                      <p className="item-description">{item.description}</p>
+                      <div className="item-details">
+                        <span 
+                          className="item-rarity"
+                          style={{ 
+                            color: getRarityColor(item.rarity.value),
+                            textShadow: `0 0 10px ${getRarityColor(item.rarity.value)}`
+                          }}
+                        >
+                          {item.rarity.displayValue}
+                        </span>
+                        <span className="item-price neon-text">
+                          🪙 {item.price} {t.vBucks}
+                        </span>
+                      </div>
+                      <button 
+                        className="btn neon-btn item-buy-btn"
+                        onClick={() => contactWhatsApp(item.name, item.price)}
+                      >
+                        {t.contactWhatsApp}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {totalSlides > 1 && (
+        <div className="carousel-dots">
+          {Array.from({ length: totalSlides }).map((_, index) => (
+            <button
+              key={index}
+              className={`carousel-dot ${index === currentIndex ? 'active' : ''}`}
+              onClick={() => setCurrentIndex(index)}
+              aria-label={`${t.slide} ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// COMPONENTE PRINCIPAL
 const HomePage: React.FC = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [languageDropdown, setLanguageDropdown] = useState(false);
@@ -454,7 +621,6 @@ const HomePage: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [currentLanguage, setCurrentLanguage] = useState('es');
-  
   const [exchangeRates, setExchangeRates] = useState(defaultExchangeRates);
   const [rateLoading, setRateLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('');
@@ -465,6 +631,8 @@ const HomePage: React.FC = () => {
   const [fortniteShop, setFortniteShop] = useState<FortniteShop | null>(null);
   const [shopLoading, setShopLoading] = useState(false);
   const [shopError, setShopError] = useState<string | null>(null);
+  const [showAllItems, setShowAllItems] = useState(false);
+  const [selectedRarity, setSelectedRarity] = useState<string>('all');
 
   const t = translations[currentLanguage as keyof typeof translations];
 
@@ -579,7 +747,7 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // 🔄 FUNCIÓN MEJORADA PARA CARGAR LA TIENDA
+  // 🔄 FUNCIÓN PARA CARGAR LA TIENDA
   const fetchFortniteShop = async (forceRefresh = false) => {
     if (shopLoading && !forceRefresh) return;
     
@@ -619,15 +787,13 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // 🪙 FUNCIÓN SIMPLIFICADA PARA TASAS DE CAMBIO (Opción 2)
+  // 🪙 FUNCIÓN PARA TASAS DE CAMBIO
   const fetchExchangeRates = async () => {
     setRateLoading(true);
     
     try {
-      // Simular delay de carga
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Usar siempre tasas predeterminadas (más confiable)
       setExchangeRates(defaultExchangeRates);
       setApiStatus('success');
       setLastUpdate(new Date().toLocaleString() + ' (Tasas de referencia)');
@@ -714,7 +880,7 @@ const HomePage: React.FC = () => {
     }
   }, []);
 
-  // Funciones de navegación MEJORADAS
+  // Funciones de navegación
   const showSection = (sectionId: string) => {
     setActiveSection(sectionId);
     setMobileMenuOpen(false);
@@ -818,6 +984,17 @@ const HomePage: React.FC = () => {
     return '★'.repeat(rating) + '☆'.repeat(5 - rating);
   };
 
+  // Filtrar items por rareza
+  const filteredItems = fortniteShop?.allItems?.filter(item => 
+    selectedRarity === 'all' || 
+    item.rarity.value.toLowerCase() === selectedRarity.toLowerCase()
+  ) || [];
+
+  // Obtener rarezas únicas para el filtro
+  const uniqueRarities = Array.from(
+    new Set(fortniteShop?.allItems?.map(item => item.rarity.value.toLowerCase()) || [])
+  );
+
   return (
     <div className="app">
       {/* Selector de idiomas */}
@@ -836,22 +1013,20 @@ const HomePage: React.FC = () => {
         </button>
       </div>
 
-      {/* Header MEJORADO */}
+      {/* Header */}
       <header className="header">
         <img 
           src="/img/header/header.webp" 
           alt="Pavos Fran Header" 
           className="header-image"
           onError={(e) => {
-            // Fallback si la imagen del header no carga
             (e.target as HTMLImageElement).style.display = 'none';
           }}
         />
       </header>
 
-      {/* Navegación MEJORADA con menú móvil */}
+      {/* Navegación */}
       <nav className="nav">
-        {/* Botón menú móvil */}
         <button className="mobile-menu-toggle" onClick={toggleMobileMenu}>
           ☰
         </button>
@@ -919,7 +1094,6 @@ const HomePage: React.FC = () => {
                 alt={`Carousel Image ${index + 1}`}
                 className={index === currentSlide ? 'active' : ''}
                 onError={(e) => {
-                  // Fallback para imágenes del carrusel
                   (e.target as HTMLImageElement).style.display = 'none';
                 }}
               />
@@ -1051,7 +1225,7 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* SECCIÓN TIENDA FORTNITE - MEJORADA */}
+      {/* SECCIÓN TIENDA FORTNITE - CON CARRUSELES */}
       {activeSection === 'fortnite-shop' && (
         <section className="section fortnite-shop-section">
           <div className="shop-header">
@@ -1087,7 +1261,9 @@ const HomePage: React.FC = () => {
             {fortniteShop && (
               <div className="status-details">
                 <small>
-                  {fortniteShop.daily.length} {t.dailyItems} • {fortniteShop.featured.length} {t.featuredItems}
+                  {t.totalItems}: {fortniteShop.allItems?.length || 0} • 
+                  {t.featuredItems}: {fortniteShop.featured.length} • 
+                  {t.dailyItems}: {fortniteShop.daily.length}
                   {fortniteShop.source === 'mock' && ' • (Modo demostración)'}
                 </small>
               </div>
@@ -1102,130 +1278,132 @@ const HomePage: React.FC = () => {
             </div>
           )}
 
-          {/* Tienda cargada */}
-          {fortniteShop && !shopLoading && (fortniteShop.featured.length > 0 || fortniteShop.daily.length > 0) && (
+          {/* Tienda cargada - CON CARRUSELES */}
+          {fortniteShop && !shopLoading && (
             <div className="fortnite-shop">
-              {/* Items Destacados */}
-              <div className="shop-category">
-                <h3 className="neon-text">⭐ {t.featuredItems} ({fortniteShop.featured.length})</h3>
-                {fortniteShop.featured.length > 0 ? (
-                  <div className="items-grid">
-                    {fortniteShop.featured.map((item) => (
-                      <div 
-                        key={item.id} 
-                        className="shop-item neon-card"
-                        style={{ 
-                          borderColor: getRarityColor(item.rarity.value),
-                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
-                        }}
-                      >
-                        <div className="item-image-container">
-                          <img 
-                            src={item.images.icon} 
-                            alt={item.name}
-                            className="item-image"
-                            loading="lazy"
-                            onError={(e) => {
-                              console.warn(`❌ Error cargando imagen para ${item.name}`);
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
-                            }}
-                          />
-                          <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
-                        </div>
-                        <div className="item-info">
-                          <h4 className="item-name">{item.name}</h4>
-                          <p className="item-description">{item.description}</p>
-                          <div className="item-details">
-                            <span 
-                              className="item-rarity"
-                              style={{ 
-                                color: getRarityColor(item.rarity.value),
-                                textShadow: `0 0 10px ${getRarityColor(item.rarity.value)}`
-                              }}
-                            >
-                              {item.rarity.displayValue}
-                            </span>
-                            <span className="item-price neon-text">
-                              🪙 {item.price} {t.vBucks}
-                            </span>
-                          </div>
-                          <button 
-                            className="btn neon-btn item-buy-btn"
-                            onClick={() => contactWhatsApp(`Item de Fortnite: ${item.name} - ${item.price} Pavos`)}
-                          >
-                            {t.contactWhatsApp}
-                          </button>
-                        </div>
-                      </div>
+              
+              {/* Filtros */}
+              <div className="shop-filters">
+                <div className="filter-group">
+                  <label htmlFor="rarity-filter">{t.filterByRarity}:</label>
+                  <select 
+                    id="rarity-filter"
+                    value={selectedRarity}
+                    onChange={(e) => setSelectedRarity(e.target.value)}
+                    className="rarity-filter"
+                  >
+                    <option value="all">{t.allRarities}</option>
+                    {uniqueRarities.map(rarity => (
+                      <option key={rarity} value={rarity}>
+                        {rarity.charAt(0).toUpperCase() + rarity.slice(1)}
+                      </option>
                     ))}
-                  </div>
-                ) : (
-                  <div className="no-items">
-                    <p>No hay items destacados disponibles</p>
-                  </div>
-                )}
+                  </select>
+                </div>
+                
+                <button 
+                  className={`btn ${showAllItems ? 'active' : ''}`}
+                  onClick={() => setShowAllItems(!showAllItems)}
+                >
+                  {showAllItems ? '📋 ' + t.categories : '📜 ' + t.viewAll}
+                </button>
               </div>
 
-              {/* Items Diarios */}
-              <div className="shop-category">
-                <h3 className="neon-text">📅 {t.dailyItems} ({fortniteShop.daily.length})</h3>
-                {fortniteShop.daily.length > 0 ? (
-                  <div className="items-grid">
-                    {fortniteShop.daily.map((item) => (
-                      <div 
-                        key={item.id} 
-                        className="shop-item neon-card"
-                        style={{ 
-                          borderColor: getRarityColor(item.rarity.value),
-                          background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
-                        }}
-                      >
-                        <div className="item-image-container">
-                          <img 
-                            src={item.images.icon} 
-                            alt={item.name}
-                            className="item-image"
-                            loading="lazy"
-                            onError={(e) => {
-                              console.warn(`❌ Error cargando imagen para ${item.name}`);
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
-                            }}
-                          />
-                          <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
-                        </div>
-                        <div className="item-info">
-                          <h4 className="item-name">{item.name}</h4>
-                          <p className="item-description">{item.description}</p>
-                          <div className="item-details">
-                            <span 
-                              className="item-rarity"
-                              style={{ 
-                                color: getRarityColor(item.rarity.value),
-                                textShadow: `0 0 10px ${getRarityColor(item.rarity.value)}`
+              {/* Vista con todos los items */}
+              {showAllItems ? (
+                <div className="all-items-view">
+                  <h3 className="neon-text">
+                    {t.allItems} ({filteredItems.length})
+                    {selectedRarity !== 'all' && ` - ${selectedRarity}`}
+                  </h3>
+                  
+                  {filteredItems.length > 0 ? (
+                    <div className="items-grid all-items-grid">
+                      {filteredItems.map((item) => (
+                        <div 
+                          key={item.id} 
+                          className="shop-item neon-card"
+                          style={{ 
+                            borderColor: getRarityColor(item.rarity.value),
+                            background: `linear-gradient(135deg, ${getRarityColor(item.rarity.value)}15, #000000)`
+                          }}
+                        >
+                          <div className="item-image-container">
+                            <img 
+                              src={item.images.icon} 
+                              alt={item.name}
+                              className="item-image"
+                              loading="lazy"
+                              onError={(e) => {
+                                console.warn(`❌ Error cargando imagen para ${item.name}`);
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
                               }}
-                            >
-                              {item.rarity.displayValue}
-                            </span>
-                            <span className="item-price neon-text">
-                              🪙 {item.price} {t.vBucks}
-                            </span>
+                            />
+                            <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
                           </div>
-                          <button 
-                            className="btn neon-btn item-buy-btn"
-                            onClick={() => contactWhatsApp(`Item de Fortnite: ${item.name} - ${item.price} Pavos`)}
-                          >
-                            {t.contactWhatsApp}
-                          </button>
+                          <div className="item-info">
+                            <h4 className="item-name">{item.name}</h4>
+                            <p className="item-description">{item.description}</p>
+                            <div className="item-details">
+                              <span 
+                                className="item-rarity"
+                                style={{ 
+                                  color: getRarityColor(item.rarity.value),
+                                  textShadow: `0 0 10px ${getRarityColor(item.rarity.value)}`
+                                }}
+                              >
+                                {item.rarity.displayValue}
+                              </span>
+                              <span className="item-price neon-text">
+                                🪙 {item.price} {t.vBucks}
+                              </span>
+                            </div>
+                            <button 
+                              className="btn neon-btn item-buy-btn"
+                              onClick={() => contactWhatsApp(`Item de Fortnite: ${item.name} - ${item.price} Pavos`)}
+                            >
+                              {t.contactWhatsApp}
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="no-items">
-                    <p>No hay items diarios disponibles</p>
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="no-items">
+                      <p>No hay items con esta rareza</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                /* Vista con carruseles por categoría */
+                <div className="carousels-view">
+                  {/* Carrusel para Items Destacados */}
+                  <ItemsCarousel 
+                    items={fortniteShop.featured}
+                    title={`⭐ ${t.featuredItems}`}
+                    itemsPerSlide={4}
+                    currentLanguage={currentLanguage}
+                  />
+
+                  {/* Carrusel para Items Diarios */}
+                  <ItemsCarousel 
+                    items={fortniteShop.daily}
+                    title={`📅 ${t.dailyItems}`}
+                    itemsPerSlide={4}
+                    currentLanguage={currentLanguage}
+                  />
+
+                  {/* Carrusel para Todos los Items (versión reducida) */}
+                  {fortniteShop.allItems && fortniteShop.allItems.length > 0 && (
+                    <ItemsCarousel 
+                      items={fortniteShop.allItems.slice(0, 20)}
+                      title={`🎮 ${t.allItems}`}
+                      itemsPerSlide={4}
+                      currentLanguage={currentLanguage}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           )}
 
