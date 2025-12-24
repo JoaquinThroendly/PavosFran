@@ -1,68 +1,90 @@
 // app/api/fortnite-shop/route.ts
 import { NextResponse } from 'next/server';
 
+// API Key de FortniteAPI.io - Obtén una gratis en: https://fortniteapi.io/
+const FORTNITE_API_KEY = process.env.FORTNITE_API_KEY || '';
+
 export async function GET() {
-  console.log('🚀 API Route: /api/fortnite-shop called');
-  
-  // Usar variable de entorno en lugar de la key directa
-  const API_KEY = process.env.FORTNITE_API_KEY;
-  const API_URL = 'https://fortniteapi.io/v2/shop?lang=es';
-
-  // Verificar que la API key esté configurada
-  if (!API_KEY) {
-    console.error('❌ FORTNITE_API_KEY no está configurada');
-    return NextResponse.json(
-      { 
-        error: 'API key no configurada',
-        details: 'Configura FORTNITE_API_KEY en Vercel'
-      },
-      { status: 500 }
-    );
-  }
-
   try {
-    console.log('🔄 Making request to FortniteAPI.io...');
+    console.log('🔄 Solicitando tienda de Fortnite...');
     
-    const response = await fetch(API_URL, {
+    // Si no hay API Key, usar datos de demostración
+    if (!FORTNITE_API_KEY) {
+      console.warn('⚠️ Sin API Key - Usando datos demo');
+      return NextResponse.json(generateDemoData());
+    }
+    
+    // Hacer petición a la API real
+    const response = await fetch('https://fortniteapi.io/v2/shop?lang=es', {
       method: 'GET',
       headers: {
-        'Authorization': API_KEY,
-        'Accept': 'application/json',
+        'Authorization': FORTNITE_API_KEY,
       },
+      next: { revalidate: 3600 } // Cache por 1 hora
     });
-
-    console.log(`📡 FortniteAPI.io response status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ FortniteAPI.io error:', {
-        status: response.status,
-        statusText: response.statusText
-      });
-      
-      return NextResponse.json(
-        { 
-          error: `Fortnite API error: ${response.status}`,
-          details: 'Check API key in Vercel'
-        },
-        { status: 502 }
-      );
-    }
-
-    const data = await response.json();
-    console.log('✅ FortniteAPI.io success');
-
-    return NextResponse.json(data);
-
-  } catch (error) {
-    console.error('❌ Critical error in API route:', error);
     
-    return NextResponse.json(
-      { 
-        error: 'Failed to connect to Fortnite API',
-        message: 'Check internet connection and API key'
-      },
-      { status: 500 }
-    );
+    if (!response.ok) {
+      console.error(`❌ Error API: ${response.status}`);
+      return NextResponse.json(generateDemoData());
+    }
+    
+    const data = await response.json();
+    console.log(`✅ API responded with ${data.data?.shop?.length || 0} items`);
+    
+    return NextResponse.json(data);
+    
+  } catch (error) {
+    console.error('🔥 Error fetching shop:', error);
+    return NextResponse.json(generateDemoData());
   }
+}
+
+// Datos de demostración cuando no hay API Key
+function generateDemoData() {
+  const items = [];
+  
+  // Generar 40 items de ejemplo
+  for (let i = 1; i <= 40; i++) {
+    const rarities = [
+      { value: 'common', display: 'Común', color: '#888888' },
+      { value: 'uncommon', display: 'Poco Común', color: '#00a8ff' },
+      { value: 'rare', display: 'Raro', color: '#9b59b6' },
+      { value: 'epic', display: 'Épico', color: '#e74c3c' },
+      { value: 'legendary', display: 'Legendario', color: '#f39c12' }
+    ];
+    
+    const rarity = rarities[Math.floor(Math.random() * rarities.length)];
+    const price = [500, 800, 1200, 1500, 2000][Math.floor(Math.random() * 5)];
+    
+    items.push({
+      id: `demo-item-${i}`,
+      name: `Skin de Prueba ${i}`,
+      description: `Esta es una skin de demostración número ${i}`,
+      price: price,
+      rarity: {
+        value: rarity.value,
+        displayValue: rarity.display,
+        backendValue: rarity.value.toUpperCase()
+      },
+      images: {
+        icon: `https://picsum.photos/150/150?random=${i}`,
+        featured: `https://picsum.photos/400/200?random=${i + 100}`
+      },
+      type: {
+        value: 'outfit',
+        displayValue: 'Skin',
+        backendValue: 'AthenaCharacter'
+      }
+    });
+  }
+  
+  return {
+    result: true,
+    lastUpdate: new Date().toISOString(),
+    data: {
+      shop: items.slice(0, 30),
+      featured: items.slice(0, 10),
+      daily: items.slice(10, 20)
+    }
+  };
 }
