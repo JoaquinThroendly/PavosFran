@@ -1,44 +1,30 @@
-// app/page.tsx - VERSIÓN COMPLETA CON TODAS LAS MEJORAS
+// app/page.tsx - VERSIÓN ACTUALIZADA CON API PÚBLICA DE FORTNITE-API.COM
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import './styles.css';
 
-// 🔧 FUNCIÓN MEJORADA PARA IMÁGENES
+// 🔧 FUNCIÓN MEJORADA PARA IMÁGENES DE LA NUEVA API
 const getValidImageUrl = (url: string | undefined | null): string => {
-  // Si no hay URL o es inválida
-  if (!url || 
-      url.includes('null') || 
-      url === '' || 
-      url === 'undefined' ||
-      url.includes('undefined') ||
-      url.trim() === '') {
-    
-    // Usar imagen de placeholder más atractiva
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+CiAgPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMxMTExMjIiLz4KICA8cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMDAwMDAwIiBzdHJva2U9IiMwMGYzZmYiIHN0cm9rZS13aWR0aD0iMiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDBmM2ZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIj5Gb3J0bml0ZTwvdGV4dD4KICA8dGV4dCB4PSI1MCUiIHk9IjY1JSIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzg4ODg4OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiI+SXRlbTwvdGV4dD4KPC9zdmc+';
+  if (!url || url.includes('null') || url === '' || url.includes('undefined')) {
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMjAwIDIwMCI+CiAgPHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMxMTExMjIiLz4KICA8cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMDAwMDAwIiBzdHJva2U9IiMwMGYzZmYiIHN0cm9rZS13aWR0aD0iMiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMDBmM2ZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIj5Gb3J0bml0ZTwvdGV4dD4KPC9zdmc+';
   }
   
-  // Si ya es una URL completa HTTP/HTTPS
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    // Asegurar que sea HTTPS
+  // Para la nueva API, las imágenes ya vienen como URLs completas
+  if (url.startsWith('http')) {
     return url.replace('http://', 'https://');
   }
   
-  // Si comienza con /, es una ruta relativa de la API
+  // Si es una ruta relativa, construir URL completa
   if (url.startsWith('/')) {
-    return `https://media.fortniteapi.io${url}`;
+    return `https://fortnite-api.com${url}`;
   }
   
-  // Si parece un nombre de archivo, construir URL completa
-  if (url.includes('.') && !url.includes(' ')) {
-    return `https://media.fortniteapi.io/images/${url}`;
-  }
-  
-  // Por defecto, intentar con la API de imágenes
+  // Por defecto
   return `https://media.fortniteapi.io/images/${encodeURIComponent(url)}`;
 };
 
-// Textos traducidos COMPLETOS
+// Textos traducidos COMPLETOS (se mantienen igual)
 const translations = {
   en: {
     home: "Home",
@@ -206,7 +192,7 @@ const translations = {
   }
 };
 
-// Tasas de cambio predeterminadas
+// Tasas de cambio predeterminadas (se mantienen igual)
 const defaultExchangeRates = {
   USD: 1,
   EUR: 0.92,
@@ -219,7 +205,7 @@ const defaultExchangeRates = {
   UYU: 39
 };
 
-// INTERFACES
+// INTERFACES (se mantienen igual)
 interface ProductPrice {
   label: string;
   priceUSD: number;
@@ -240,7 +226,7 @@ interface Comment {
   rating: number;
 }
 
-// INTERFACE PARA ITEMS DE FORTNITE
+// INTERFACE PARA ITEMS DE FORTNITE (se mantiene igual)
 interface FortniteItem {
   id: string;
   name: string;
@@ -271,7 +257,7 @@ interface FortniteShop {
   source: 'api' | 'demo';
 }
 
-// Función de respaldo para items con error
+// Función de respaldo para items con error (actualizada)
 const createFallbackItem = (index: number): FortniteItem => ({
   id: `fallback-${index}-${Date.now()}`,
   name: 'Item no disponible',
@@ -283,7 +269,7 @@ const createFallbackItem = (index: number): FortniteItem => ({
     backendValue: 'Common'
   },
   images: {
-    icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5FcnJvcjwvdGV4dD4KPC9zdmc+'
+    icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZTwvdGV4dD4KPC9zdmc+'
   },
   type: {
     value: 'outfit',
@@ -292,256 +278,150 @@ const createFallbackItem = (index: number): FortniteItem => ({
   }
 });
 
-// FUNCIÓN PARA EXTRAER DATOS DE ITEMS (NUEVA)
-const extractItemData = (entry: any): any[] => {
-  const items: any[] = [];
-  
-  // Si la entrada tiene un array de items
-  if (entry.items && Array.isArray(entry.items)) {
-    items.push(...entry.items.map((item: any) => ({
-      ...item,
-      // Añadir metadatos de la entrada principal
-      mainId: entry.mainId,
-      displayName: entry.displayName || item.name,
-      displayDescription: entry.displayDescription || item.description,
-      finalPrice: entry.finalPrice || item.finalPrice,
-      regularPrice: entry.regularPrice || item.regularPrice,
-      banner: entry.banner,
-      section: entry.section,
-      sectionId: entry.sectionId
-    })));
-  }
-  // Si la entrada tiene un solo item
-  else if (entry.item) {
-    items.push({
-      ...entry.item,
-      mainId: entry.mainId,
-      displayName: entry.displayName || entry.item.name,
-      finalPrice: entry.finalPrice,
-      regularPrice: entry.regularPrice
-    });
-  }
-  // Si la entrada ES un item
-  else if (entry.id || entry.name) {
-    items.push(entry);
-  }
-  
-  return items;
-};
+// ========== NUEVAS FUNCIONES PARA LA API PÚBLICA ==========
 
-// FUNCIÓN MEJORADA PARA PROCESAR ITEMS (NUEVA)
-const processItemsArray = (items: any[]): FortniteItem[] => {
-  if (!items || !Array.isArray(items)) {
-    return [];
-  }
-
-  return items.map((item: any, index: number) => {
-    if (!item) {
-      return createFallbackItem(index);
-    }
-
-    try {
-      // EXTRAER NOMBRE - Buscar en múltiples ubicaciones
-      const itemName = 
-        item.name || 
-        item.displayName || 
-        item.displayDescription?.split('.')[0] || // Usar primera frase de la descripción
-        item.title || 
-        item.item?.name ||
-        `Fortnite Item ${index + 1}`;
-
-      // EXTRAER DESCRIPCIÓN
-      const itemDescription = 
-        item.description || 
-        item.displayDescription || 
-        item.item?.description ||
-        'Item disponible en la tienda de Fortnite';
-
-      // EXTRAER PRECIO - Buscar en múltiples ubicaciones
-      let itemPrice = 0;
-      if (item.finalPrice !== undefined && item.finalPrice !== null) {
-        itemPrice = item.finalPrice;
-      } else if (item.regularPrice !== undefined && item.regularPrice !== null) {
-        itemPrice = item.regularPrice;
-      } else if (item.price !== undefined && item.price !== null) {
-        if (typeof item.price === 'object') {
-          itemPrice = item.price.finalPrice || item.price.regularPrice || 0;
-        } else {
-          itemPrice = item.price;
-        }
-      } else if (item.costmetic?.price) {
-        itemPrice = item.costmetic.price;
-      }
-
-      // EXTRAER IMÁGENES - Buscar en múltiples ubicaciones
-      const itemImages = item.images || item.item?.images || item.costmetic?.images || {};
-      
-      // Buscar URL de imagen principal
-      let mainImage = '';
-      if (itemImages.icon) mainImage = itemImages.icon;
-      else if (itemImages.featured) mainImage = itemImages.featured;
-      else if (itemImages.smallIcon) mainImage = itemImages.smallIcon;
-      else if (itemImages.background) mainImage = itemImages.background;
-      else if (item.icon) mainImage = item.icon;
-      else if (item.featured) mainImage = item.featured;
-
-      // EXTRAER RAREZA
-      let rarityValue = 'common';
-      let rarityDisplay = 'Común';
-      
-      if (item.rarity) {
-        rarityValue = item.rarity.value || item.rarity.id || item.rarity || 'common';
-        rarityDisplay = item.rarity.displayValue || item.rarity.name || 
-                       (typeof item.rarity === 'string' ? item.rarity : 'Common');
-      } else if (item.item?.rarity) {
-        const r = item.item.rarity;
-        rarityValue = r.value || r.id || r;
-        rarityDisplay = r.displayValue || r.name || (typeof r === 'string' ? r : 'Common');
-      } else if (item.rarityId) {
-        rarityValue = item.rarityId.toLowerCase();
-        rarityDisplay = rarityValue.charAt(0).toUpperCase() + rarityValue.slice(1);
-      }
-
-      // EXTRAER TIPO
-      let typeValue = 'outfit';
-      let typeDisplay = 'Skin';
-      
-      if (item.type) {
-        typeValue = item.type.value || item.type.id || 'outfit';
-        typeDisplay = item.type.displayValue || item.type.name || 'Skin';
-      } else if (item.itemType) {
-        typeValue = item.itemType;
-        typeDisplay = item.itemType.charAt(0).toUpperCase() + item.itemType.slice(1);
-      } else if (item.displayType) {
-        typeValue = item.displayType.toLowerCase();
-        typeDisplay = item.displayType;
-      }
-
-      return {
-        id: item.id || item.mainId || `item-${index}-${Date.now()}`,
-        name: itemName.length > 50 ? itemName.substring(0, 47) + '...' : itemName,
-        description: itemDescription.length > 100 ? itemDescription.substring(0, 97) + '...' : itemDescription,
-        price: itemPrice,
-        rarity: {
-          value: rarityValue.toLowerCase(),
-          displayValue: rarityDisplay,
-          backendValue: rarityValue.toUpperCase()
-        },
-        images: {
-          icon: getValidImageUrl(mainImage),
-          featured: getValidImageUrl(itemImages.featured || itemImages.largeIcon),
-          background: getValidImageUrl(itemImages.background)
-        },
-        type: {
-          value: typeValue.toLowerCase(),
-          displayValue: typeDisplay,
-          backendValue: typeValue.toUpperCase()
-        }
-      };
-    } catch (error) {
-      console.error(`Error procesando item ${index}:`, error, item);
-      return createFallbackItem(index);
-    }
-  }).filter(Boolean);
-};
-
-// FUNCIÓN MEJORADA PARA PROCESAR DATOS DE LA API (NUEVA)
+// FUNCIÓN PARA PROCESAR DATOS DE FORTNITE-API.COM (NUEVA)
 const processFortniteApiData = (apiData: any): FortniteShop => {
-  console.log('🔧 Procesando datos de la API...', apiData);
+  console.log('🔧 Procesando datos de Fortnite-API.com...');
   
-  let allRawItems: any[] = [];
-
-  // ESTRATEGIA 1: API de FortniteAPI.io v2 (estructura actual)
-  if (apiData.data) {
-    // Procesar shop principal
-    if (apiData.data.shop && Array.isArray(apiData.data.shop)) {
-      console.log(`📦 Procesando ${apiData.data.shop.length} entradas del shop`);
-      apiData.data.shop.forEach((entry: any) => {
-        allRawItems.push(...extractItemData(entry));
-      });
-    }
-
-    // Procesar featured
-    if (apiData.data.featured && Array.isArray(apiData.data.featured)) {
-      console.log(`⭐ Procesando ${apiData.data.featured.length} entradas featured`);
-      apiData.data.featured.forEach((entry: any) => {
-        allRawItems.push(...extractItemData(entry));
-      });
-    }
-
-    // Procesar daily
-    if (apiData.data.daily && Array.isArray(apiData.data.daily)) {
-      console.log(`📅 Procesando ${apiData.data.daily.length} entradas daily`);
-      apiData.data.daily.forEach((entry: any) => {
-        allRawItems.push(...extractItemData(entry));
-      });
-    }
-
-    // Procesar bundles si existen
-    if (apiData.data.bundles && Array.isArray(apiData.data.bundles)) {
-      apiData.data.bundles.forEach((bundle: any) => {
-        if (bundle.items) allRawItems.push(...bundle.items);
-      });
-    }
-  }
+  const allItems: FortniteItem[] = [];
   
-  // ESTRATEGIA 2: Si no hay items, usar estructura antigua
-  if (allRawItems.length === 0) {
-    if (apiData.shop && Array.isArray(apiData.shop)) {
-      allRawItems = apiData.shop;
-    } else if (Array.isArray(apiData)) {
-      allRawItems = apiData;
-    }
-  }
-
-  console.log(`🎯 Total de items crudos encontrados: ${allRawItems.length}`);
-
-  // Procesar todos los items
-  const processedItems = processItemsArray(allRawItems);
-
-  // Eliminar duplicados por ID y nombre
-  const uniqueItemsMap = new Map();
-  processedItems.forEach(item => {
-    const key = `${item.id}-${item.name}`;
-    if (!uniqueItemsMap.has(key)) {
-      uniqueItemsMap.set(key, item);
-    }
-  });
-
-  const uniqueItems = Array.from(uniqueItemsMap.values());
-
-  // Separar en featured y daily basado en precio y rareza
-  const featuredItems = uniqueItems.filter(item => 
-    item.price > 800 || 
-    ['legendary', 'epic', 'marvel', 'icon', 'dark', 'star wars', 'gaminglegends', 'dc', 'lava', 'shadow', 'frozen']
-      .includes(item.rarity.value.toLowerCase())
-  );
-
-  const dailyItems = uniqueItems.filter(item => 
-    !featuredItems.some(featured => featured.id === item.id)
-  );
-
-  console.log(`✅ Procesado: ${uniqueItems.length} total, ${featuredItems.length} featured, ${dailyItems.length} daily`);
-  
-  // Mostrar algunos ejemplos para debug
-  if (uniqueItems.length > 0) {
-    console.log('📝 Ejemplos de items procesados:');
-    uniqueItems.slice(0, 3).forEach((item, i) => {
-      console.log(`  ${i + 1}. ${item.name} - ${item.price} V-Bucks - ${item.rarity.displayValue}`);
-      console.log(`     Imagen: ${item.images.icon.substring(0, 50)}...`);
+  // La nueva API tiene esta estructura: data.featured.entries y data.daily.entries
+  if (apiData.data && apiData.data.featured && apiData.data.daily) {
+    const featuredEntries = apiData.data.featured.entries || [];
+    const dailyEntries = apiData.data.daily.entries || [];
+    
+    console.log(`📦 Encontrados: ${featuredEntries.length} featured, ${dailyEntries.length} daily`);
+    
+    // Procesar items destacados
+    featuredEntries.forEach((entry: any) => {
+      if (entry.items && Array.isArray(entry.items)) {
+        entry.items.forEach((item: any) => {
+          const processed = processSingleItem(item, 'featured');
+          if (processed) allItems.push(processed);
+        });
+      }
+    });
+    
+    // Procesar items diarios
+    dailyEntries.forEach((entry: any) => {
+      if (entry.items && Array.isArray(entry.items)) {
+        entry.items.forEach((item: any) => {
+          const processed = processSingleItem(item, 'daily');
+          if (processed) allItems.push(processed);
+        });
+      }
     });
   }
-
+  
+  // Eliminar duplicados
+  const uniqueItems = Array.from(
+    new Map(allItems.map(item => [item.id, item])).values()
+  );
+  
+  console.log(`✅ Total items únicos: ${uniqueItems.length}`);
+  
+  // Separar en featured y daily
+  const featuredItems = uniqueItems.filter(item => 
+    item.type.value === 'featured' || item.price > 800
+  ).slice(0, 20);
+  
+  const dailyItems = uniqueItems.filter(item => 
+    !featuredItems.some(f => f.id === item.id)
+  ).slice(0, 20);
+  
   return {
     allItems: uniqueItems,
     daily: dailyItems,
     featured: featuredItems,
-    lastUpdate: apiData.lastUpdate || new Date().toISOString(),
-    source: apiData.result === true ? 'api' : 'demo'
+    lastUpdate: apiData.data?.date || new Date().toISOString(),
+    source: 'api'
   };
 };
 
-// FUNCIÓN PARA OBTENER COLOR SEGÚN RAREZA
+// FUNCIÓN PARA PROCESAR UN ITEM INDIVIDUAL (NUEVA)
+const processSingleItem = (item: any, source: string): FortniteItem | null => {
+  try {
+    if (!item || !item.name) return null;
+    
+    // ID único
+    const id = item.id || `item-${Date.now()}-${Math.random()}`;
+    
+    // Nombre y descripción
+    const name = item.name || 'Item de Fortnite';
+    const description = item.description || 'Disponible en la tienda';
+    
+    // Precio (la nueva API usa finalPrice o regularPrice)
+    let price = 0;
+    if (item.price) {
+      if (typeof item.price === 'object') {
+        price = item.price.finalPrice || item.price.regularPrice || 0;
+      } else {
+        price = item.price;
+      }
+    }
+    
+    // Rareza
+    const rarityValue = item.rarity?.id?.toLowerCase() || 
+                       item.rarity?.value?.toLowerCase() || 
+                       'common';
+    
+    const rarityDisplay = item.rarity?.displayValue || 
+                         item.rarity?.name || 
+                         rarityValue.charAt(0).toUpperCase() + rarityValue.slice(1);
+    
+    // Tipo
+    const typeValue = item.type?.id?.toLowerCase() || 
+                     item.type?.value?.toLowerCase() || 
+                     'outfit';
+    
+    const typeDisplay = item.type?.displayValue || 
+                       item.type?.name || 
+                       typeValue.charAt(0).toUpperCase() + typeValue.slice(1);
+    
+    // Imágenes (la nueva API tiene estructura diferente)
+    let iconImage = '';
+    if (item.images) {
+      // La nueva API usa estas propiedades
+      iconImage = item.images.icon || 
+                  item.images.smallIcon || 
+                  item.images.featured || 
+                  '';
+    }
+    
+    // Si no hay imagen, usar placeholder
+    if (!iconImage || iconImage.includes('null')) {
+      iconImage = `https://via.placeholder.com/200/111122/00f3ff?text=${encodeURIComponent(name.substring(0, 10))}`;
+    }
+    
+    return {
+      id: id,
+      name: name.length > 40 ? name.substring(0, 37) + '...' : name,
+      description: description.length > 80 ? description.substring(0, 77) + '...' : description,
+      price: price,
+      rarity: {
+        value: rarityValue,
+        displayValue: rarityDisplay,
+        backendValue: rarityValue.toUpperCase()
+      },
+      images: {
+        icon: getValidImageUrl(iconImage),
+        featured: getValidImageUrl(item.images?.featured || iconImage),
+        background: getValidImageUrl(item.images?.background)
+      },
+      type: {
+        value: typeValue,
+        displayValue: typeDisplay,
+        backendValue: typeValue.toUpperCase()
+      }
+    };
+  } catch (error) {
+    console.error('Error procesando item:', error, item);
+    return null;
+  }
+};
+
+// FUNCIÓN PARA OBTENER COLOR SEGÚN RAREZA (se mantiene igual)
 const getRarityColor = (rarity: string): string => {
   const rarityColors: { [key: string]: string } = {
     'common': '#888888',
@@ -563,7 +443,7 @@ const getRarityColor = (rarity: string): string => {
   return rarityColors[rarity.toLowerCase()] || '#888888';
 };
 
-// COMPONENTE CARRUSEL PARA ITEMS
+// COMPONENTE CARRUSEL PARA ITEMS (se mantiene igual)
 interface ItemsCarouselProps {
   items: FortniteItem[];
   title: string;
@@ -660,7 +540,7 @@ const ItemsCarousel: React.FC<ItemsCarouselProps> = ({
                         loading="lazy"
                         onError={(e) => {
                           console.warn(`❌ Error cargando imagen para ${item.name}`);
-                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+                          (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZTwvdGV4dD4KPC9zdmc+';
                         }}
                       />
                       <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
@@ -741,7 +621,7 @@ const HomePage: React.FC = () => {
 
   const t = translations[currentLanguage as keyof typeof translations];
 
-  // Datos base de productos
+  // Datos base de productos (se mantienen igual)
   const baseProductsData: { [key: number]: Omit<Product, 'name'>[] } = {
     1: [
       {
@@ -804,7 +684,7 @@ const HomePage: React.FC = () => {
     ]
   };
 
-  // Función para obtener productos con nombres traducidos
+  // Función para obtener productos con nombres traducidos (se mantiene igual)
   const getProductsData = React.useCallback(() => {
     const productNames: { [key: number]: string[] } = {
       1: [t.fortniteCrew],
@@ -830,7 +710,7 @@ const HomePage: React.FC = () => {
 
   const productsData = React.useMemo(() => getProductsData(), [getProductsData]);
 
-  // Datos del carrusel
+  // Datos del carrusel (se mantienen igual)
   const carouselImages = [
     "/img/carrousel/banner-pica.webp",
     "/img/carrousel/1.webp",
@@ -839,7 +719,7 @@ const HomePage: React.FC = () => {
     "/img/carrousel/4.webp"
   ];
 
-  // Comentarios iniciales
+  // Comentarios iniciales (se mantienen igual)
   const initialComments: Comment[] = [
     {
       id: 1,
@@ -852,7 +732,7 @@ const HomePage: React.FC = () => {
 
   const [comments, setComments] = useState<Comment[]>(initialComments);
 
-  // 🔄 FUNCIÓN PARA CARGAR LA TIENDA REAL (ACTUALIZADA)
+  // ========== NUEVA FUNCIÓN PARA CARGAR LA TIENDA DESDE API PÚBLICA ==========
   const fetchFortniteShop = async (forceRefresh = false) => {
     if (shopLoading && !forceRefresh) return;
     
@@ -860,37 +740,29 @@ const HomePage: React.FC = () => {
     setShopError(null);
     
     try {
-      console.log('🔄 Iniciando carga de tienda Fortnite...');
-      const response = await fetch('/api/fortnite-shop', {
-        cache: 'no-store',
+      console.log('🔄 Cargando tienda desde Fortnite-API.com...');
+      
+      // URL DE LA NUEVA API PÚBLICA (SIN API KEY REQUERIDA)
+      const apiUrl = currentLanguage === 'es' 
+        ? 'https://fortnite-api.com/v2/shop/br?language=es'
+        : 'https://fortnite-api.com/v2/shop/br';
+      
+      const response = await fetch(apiUrl, {
         headers: {
-          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       });
 
       console.log('📡 Estado de respuesta:', response.status);
       
       if (!response.ok) {
-        throw new Error(`Error HTTP ${response.status}`);
+        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log('✅ Datos recibidos de la API');
+      console.log('✅ Datos recibidos correctamente de API pública');
       
-      // Verificar si la API devolvió un error
-      if (data.error) {
-        console.error('❌ Error en datos de API:', data.message);
-        setShopError(data.message || t.connectionFailed);
-        setFortniteShop({
-          allItems: [],
-          daily: [],
-          featured: [],
-          lastUpdate: new Date().toISOString(),
-          source: 'demo'
-        });
-        return;
-      }
-
+      // Procesar los datos con la nueva función
       const processedShop = processFortniteApiData(data);
       setFortniteShop(processedShop);
       setShopError(null);
@@ -900,11 +772,11 @@ const HomePage: React.FC = () => {
       
       setShopError(
         currentLanguage === 'es' 
-          ? `Error: ${error.message || 'No se pudo conectar a la API'}`
-          : `Error: ${error.message || 'Could not connect to API'}`
+          ? `Error temporal. Usando datos de demostración.`
+          : `Temporary error. Using demo data.`
       );
       
-      // Generar datos de demostración con mejores nombres
+      // Datos de demostración como fallback
       const demoItems = generateDemoFortniteItems();
       setFortniteShop({
         allItems: demoItems,
@@ -919,7 +791,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Función para generar items de demostración con mejores nombres
+  // Función para generar items de demostración (actualizada)
   const generateDemoFortniteItems = (): FortniteItem[] => {
     const skinNames = [
       "Renegade Raider", "Skull Trooper", "Black Knight", "Galaxy Skin", 
@@ -948,18 +820,17 @@ const HomePage: React.FC = () => {
     
     const items: FortniteItem[] = [];
     
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 30; i++) {
       const skinIndex = i % skinNames.length;
       const typeIndex = i % itemTypes.length;
       const rarityIndex = Math.floor(Math.random() * rarities.length);
-      const price = [500, 800, 1200, 1500, 2000, 2500][Math.floor(Math.random() * 6)];
+      const price = [500, 800, 1200, 1500, 2000][Math.floor(Math.random() * 5)];
       
       const rarity = rarities[rarityIndex];
       const type = itemTypes[typeIndex];
       
-      // Usar imágenes de Fortnite de un CDN público
-      const imageNumber = 1000 + i;
-      const imageUrl = `https://fortnite-api.com/images/cosmetics/br/${imageNumber}/icon.png`;
+      // Usar placeholder de imagen
+      const imageUrl = `https://via.placeholder.com/200/111122/00f3ff?text=${encodeURIComponent(skinNames[skinIndex].substring(0, 10))}`;
       
       items.push({
         id: `demo-item-${i}-${Date.now()}`,
@@ -973,8 +844,8 @@ const HomePage: React.FC = () => {
         },
         images: {
           icon: imageUrl,
-          featured: `https://picsum.photos/400/200?random=${i}&t=${Date.now()}`,
-          background: `https://picsum.photos/800/400?random=${i + 100}`
+          featured: imageUrl,
+          background: ''
         },
         type: {
           value: type.value,
@@ -987,7 +858,7 @@ const HomePage: React.FC = () => {
     return items;
   };
 
-  // 🪙 FUNCIÓN PARA TASAS DE CAMBIO
+  // 🪙 FUNCIÓN PARA TASAS DE CAMBIO (se mantiene igual)
   const fetchExchangeRates = async () => {
     setRateLoading(true);
     
@@ -1008,7 +879,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Función para convertir precios
+  // Función para convertir precios (se mantiene igual)
   const convertPrice = (priceUSD: number): number => {
     const rate = exchangeRates[currency as keyof typeof exchangeRates] || 1;
     const converted = priceUSD * rate;
@@ -1019,7 +890,7 @@ const HomePage: React.FC = () => {
     return parseFloat(converted.toFixed(2));
   };
 
-  // Función para formatear precio
+  // Función para formatear precio (se mantiene igual)
   const formatPrice = (priceUSD: number): string => {
     if (priceUSD === 0) return t.contactWhatsApp;
     
@@ -1045,7 +916,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Efectos
+  // ========== EFECTOS ==========
   useEffect(() => {
     const count = localStorage.getItem('visitCount');
     if (count) {
@@ -1080,7 +951,7 @@ const HomePage: React.FC = () => {
     }
   }, []);
 
-  // Funciones de navegación
+  // ========== FUNCIONES DE NAVEGACIÓN (se mantienen igual) ==========
   const showSection = (sectionId: string) => {
     setActiveSection(sectionId);
     setMobileMenuOpen(false);
@@ -1195,6 +1066,7 @@ const HomePage: React.FC = () => {
     new Set(fortniteShop?.allItems?.map(item => item.rarity.value.toLowerCase()) || [])
   ).sort();
 
+  // ========== RENDER ==========
   return (
     <div className="app">
       {/* Selector de idiomas */}
@@ -1283,7 +1155,7 @@ const HomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Sección Home */}
+      {/* Sección Home (se mantiene igual) */}
       {activeSection === 'home' && (
         <section className="section">
           <div className="carousel">
@@ -1341,7 +1213,7 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* Sección Products */}
+      {/* Sección Products (se mantiene igual) */}
       {activeSection === 'products' && (
         <section className="section products-section">
           <h2>{t.products}</h2>
@@ -1425,7 +1297,7 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* SECCIÓN TIENDA FORTNITE - MEJORADA */}
+      {/* SECCIÓN TIENDA FORTNITE - ACTUALIZADA CON NUEVA API */}
       {activeSection === 'fortnite-shop' && (
         <section className="section fortnite-shop-section">
           <div className="shop-header">
@@ -1488,7 +1360,7 @@ const HomePage: React.FC = () => {
             </div>
           )}
 
-          {/* Tienda cargada - MEJORADA */}
+          {/* Tienda cargada */}
           {fortniteShop && !shopLoading && (
             <div className="fortnite-shop">
               
@@ -1546,7 +1418,7 @@ const HomePage: React.FC = () => {
                               loading="lazy"
                               onError={(e) => {
                                 console.warn(`❌ Error cargando imagen para ${item.name}`);
-                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZSBJdGVtPC90ZXh0Pgo8L3N2Zz4=';
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2NjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Gb3J0bml0ZTwvdGV4dD4KPC9zdmc+';
                               }}
                             />
                             <div className="item-glow" style={{ backgroundColor: getRarityColor(item.rarity.value) }}></div>
@@ -1633,7 +1505,7 @@ const HomePage: React.FC = () => {
         </section>
       )}
 
-      {/* Modal de producto */}
+      {/* Modal de producto (se mantiene igual) */}
       {selectedProduct && (
         <div className="product-modal-overlay" onClick={closeProductModal}>
           <div className="product-modal neon-card" onClick={(e) => e.stopPropagation()}>
@@ -1662,7 +1534,7 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* Secciones Payments y Contact */}
+      {/* Secciones Payments y Contact (se mantienen igual) */}
       {activeSection === 'payments' && (
         <section className="section">
           <h2 className="neon-text">{t.paymentMethods}</h2>
