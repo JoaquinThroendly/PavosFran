@@ -1,4 +1,4 @@
-// app/page.tsx - VERSIÓN COMPLETA CON API FUNCIONAL
+// app/page.tsx - VERSIÓN CORREGIDA SIN ERRORES DE SET
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -20,8 +20,14 @@ const getValidImageUrl = (url: string | undefined | null): string => {
     return url.replace('http://', 'https://');
   }
   
+  // Para rutas relativas de fnbr.co
   if (url.startsWith('/')) {
-    return `https://fortnite-api.com${url}`;
+    return `https://image.fnbr.co${url}`;
+  }
+  
+  // Si ya es una URL completa de image.fnbr.co
+  if (url.includes('image.fnbr.co')) {
+    return url;
   }
   
   return generateSVGPlaceholder('Item');
@@ -109,7 +115,10 @@ const translations = {
     totalItems: "Total Items",
     apiConnected: "Connected to Fortnite API",
     connectionFailed: "Connection Failed",
-    noApiKey: "API Key Missing"
+    noApiKey: "API Key Missing",
+    apiKeyRequired: "API Key required",
+    apiKeyMissing: "Add API key to .env.local",
+    invalidApiResponse: "Invalid API response format"
   },
   es: {
     home: "Inicio",
@@ -191,7 +200,10 @@ const translations = {
     totalItems: "Items Totales",
     apiConnected: "Conectado a Fortnite API",
     connectionFailed: "Conexión Fallida",
-    noApiKey: "API Key Faltante"
+    noApiKey: "API Key Faltante",
+    apiKeyRequired: "Se requiere API Key",
+    apiKeyMissing: "Agrega API key a .env.local",
+    invalidApiResponse: "Formato de respuesta API inválido"
   }
 };
 
@@ -258,6 +270,20 @@ interface FortniteShop {
   featured: FortniteItem[];
   lastUpdate: string;
   source: 'api' | 'demo';
+  sections?: ShopSection[];
+}
+
+interface ShopSection {
+  displayName: string;
+  key: string;
+  priority: number;
+  items: string[];
+}
+
+interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  reset: number;
 }
 
 // Función de respaldo para items con error
@@ -321,7 +347,7 @@ const formatType = (type: string): string => {
   return types[type.toLowerCase()] || type;
 };
 
-// ========== NUEVAS FUNCIONES PARA API FUNCIONAL ==========
+// ========== NUEVAS FUNCIONES PARA FNBR.CO API ==========
 
 // FUNCIÓN PARA PROCESAR ITEMS DE FNBR.CO
 const processFnbrItem = (item: any): FortniteItem | null => {
@@ -331,7 +357,15 @@ const processFnbrItem = (item: any): FortniteItem | null => {
     const id = item.id || `item-${Date.now()}-${Math.random()}`;
     const name = item.name || 'Fortnite Item';
     const description = item.description || 'Disponible en la tienda de Fortnite';
-    const price = item.vbucks || item.price || 0;
+    
+    // Extraer precio: fnbr.co usa string con comas (ej: "1,500")
+    let price = 0;
+    if (item.price) {
+      const priceStr = String(item.price).replace(/,/g, '');
+      price = parseInt(priceStr) || 0;
+    } else if (item.vbucks) {
+      price = item.vbucks;
+    }
     
     // Imagen - fnbr.co usa images.icon
     const imageUrl = item.images?.icon || 
@@ -340,7 +374,7 @@ const processFnbrItem = (item: any): FortniteItem | null => {
                      '';
     
     // Usar placeholder SVG si no hay imagen
-    const finalImageUrl = imageUrl ? getValidImageUrl(imageUrl) : generateSVGPlaceholder(name);
+    const finalImageUrl = getValidImageUrl(imageUrl);
     
     const rarityValue = (item.rarity || 'common').toLowerCase();
     const typeValue = (item.type || 'outfit').toLowerCase();
@@ -372,59 +406,112 @@ const processFnbrItem = (item: any): FortniteItem | null => {
   }
 };
 
-// FUNCIÓN PARA PROCESAR DATOS DE FNBR.CO
-const processFnbrApiData = (apiData: any): FortniteShop => {
-  console.log('🔧 Procesando datos de fnbr.co...');
+// FUNCIÓN PARA OBTENER ITEMS POR SUS IDs
+const fetchItemsByIds = async (itemIds: string[], apiKey: string): Promise<FortniteItem[]> => {
+  if (!itemIds.length) return [];
   
-  const allItems: FortniteItem[] = [];
+  const items: FortniteItem[] = [];
+  const batchSize = 15; // Límite de fnbr.co
   
-  // fnbr.co tiene estructura data -> data
-  const shopData = apiData.data?.data || apiData.data || apiData;
-  
-  if (shopData && Array.isArray(shopData)) {
-    shopData.slice(0, 50).forEach((item: any) => {
-      const processed = processFnbrItem(item);
-      if (processed) allItems.push(processed);
-    });
-  } else if (shopData && typeof shopData === 'object') {
-    // Si es un objeto, extraer arrays
-    if (shopData.featured && Array.isArray(shopData.featured)) {
-      shopData.featured.forEach((item: any) => {
-        const processed = processFnbrItem(item);
-        if (processed) allItems.push(processed);
-      });
-    }
-    if (shopData.daily && Array.isArray(shopData.daily)) {
-      shopData.daily.forEach((item: any) => {
-        const processed = processFnbrItem(item);
-        if (processed) allItems.push(processed);
-      });
+  for (let i = 0; i < itemIds.length; i += batchSize) {
+    const batch = itemIds.slice(i, i + batchSize);
+    
+    // Para cada ID, buscar en la API de imágenes
+    for (const itemId of batch) {
+      try {
+        const response = await fetch(`https://fnbr.co/api/images?search=${itemId}&limit=1`, {
+          headers: {
+            'x-api-key': apiKey,
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 200 && data.data && data.data.length > 0) {
+            const processed = processFnbrItem(data.data[0]);
+            if (processed) items.push(processed);
+          }
+        }
+        
+        // Respeta los límites de tasa
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (error) {
+        console.error(`Error fetching item ${itemId}:`, error);
+      }
     }
   }
   
-  console.log(`✅ Total items procesados: ${allItems.length}`);
+  return items;
+};
+
+// FUNCIÓN PRINCIPAL PARA PROCESAR DATOS DE FNBR.CO
+const processFnbrShopData = async (apiData: any, apiKey: string): Promise<FortniteShop> => {
+  console.log('🔧 Procesando datos de fnbr.co shop API...');
   
-  // Eliminar duplicados
-  const uniqueItems = Array.from(
-    new Map(allItems.map(item => [item.id, item])).values()
-  );
+  const allItems: FortniteItem[] = [];
+  const dailyItems: FortniteItem[] = [];
+  const featuredItems: FortniteItem[] = [];
   
-  // Separar en featured y daily (simulación)
-  const featuredItems = uniqueItems.filter(item => 
-    item.price > 800 || 
-    ['legendary', 'epic', 'mythic', 'marvel'].includes(item.rarity.value)
-  ).slice(0, 20);
+  const shopData = apiData.data;
   
-  const dailyItems = uniqueItems.filter(item => 
-    !featuredItems.some(f => f.id === item.id)
-  ).slice(0, 20);
+  if (!shopData || !shopData.sections) {
+    console.error('Estructura de datos inválida:', apiData);
+    throw new Error('Invalid API response format');
+  }
+  
+  // Extraer IDs de items de cada sección
+  const dailyIds: string[] = [];
+  const featuredIds: string[] = [];
+  const otherIds: string[] = [];
+  
+  shopData.sections.forEach((section: any) => {
+    if (!section.items || !Array.isArray(section.items)) return;
+    
+    const sectionKey = section.key?.toLowerCase() || '';
+    const displayName = section.displayName?.toLowerCase() || '';
+    
+    if (sectionKey.includes('daily') || displayName.includes('daily')) {
+      dailyIds.push(...section.items);
+    } else if (sectionKey.includes('featured') || displayName.includes('featured')) {
+      featuredIds.push(...section.items);
+    } else {
+      otherIds.push(...section.items);
+    }
+  });
+  
+  // Eliminar duplicados - CORREGIDO: usando Array.from en lugar de spread operator
+  const uniqueDailyIds = Array.from(new Set(dailyIds));
+  const uniqueFeaturedIds = Array.from(new Set(featuredIds));
+  const allUniqueIds = Array.from(new Set(dailyIds.concat(featuredIds, otherIds)));
+  
+  console.log(`📊 IDs encontrados: Daily=${uniqueDailyIds.length}, Featured=${uniqueFeaturedIds.length}, Total=${allUniqueIds.length}`);
+  
+  // Obtener items para cada categoría
+  if (uniqueDailyIds.length > 0) {
+    const daily = await fetchItemsByIds(uniqueDailyIds, apiKey);
+    dailyItems.push(...daily);
+  }
+  
+  if (uniqueFeaturedIds.length > 0) {
+    const featured = await fetchItemsByIds(uniqueFeaturedIds, apiKey);
+    featuredItems.push(...featured);
+  }
+  
+  // Para todos los items, usamos un conjunto limitado para no exceder límites
+  const allIdsToFetch = allUniqueIds.slice(0, 50); // Límite razonable
+  const allItemsResult = await fetchItemsByIds(allIdsToFetch, apiKey);
+  allItems.push(...allItemsResult);
+  
+  console.log(`✅ Items procesados: Daily=${dailyItems.length}, Featured=${featuredItems.length}, Total=${allItems.length}`);
   
   return {
-    allItems: uniqueItems,
+    allItems: allItems,
     daily: dailyItems,
     featured: featuredItems,
-    lastUpdate: new Date().toISOString(),
-    source: 'api'
+    lastUpdate: shopData.date || new Date().toISOString(),
+    source: 'api',
+    sections: shopData.sections
   };
 };
 
@@ -626,8 +713,13 @@ const HomePage: React.FC = () => {
   const [shopError, setShopError] = useState<string | null>(null);
   const [showAllItems, setShowAllItems] = useState(false);
   const [selectedRarity, setSelectedRarity] = useState<string>('all');
+  const [rateLimitInfo, setRateLimitInfo] = useState<RateLimitInfo | null>(null);
+  const [apiKeyStatus, setApiKeyStatus] = useState<'checking' | 'valid' | 'missing'>('checking');
 
   const t = translations[currentLanguage as keyof typeof translations];
+
+  // Tu API Key - ahora usa variables de entorno
+  const API_KEY = process.env.NEXT_PUBLIC_FNBR_API_KEY || 'ce3c5548-e06b-4e48-9b12-0b3558ad2cbc';
 
   // Datos base de productos
   const baseProductsData: { [key: number]: Omit<Product, 'name'>[] } = {
@@ -760,45 +852,91 @@ const HomePage: React.FC = () => {
     
     setShopLoading(true);
     setShopError(null);
+    setApiKeyStatus('checking');
+    
+    // Verificar API Key
+    if (!API_KEY || API_KEY === 'ce3c5548-e06b-4e48-9b12-0b3558ad2cbc') {
+      setApiKeyStatus('missing');
+      setShopError(t.apiKeyMissing);
+      setShopLoading(false);
+      
+      // Cargar datos demo
+      const demoItems = generateDemoFortniteItems();
+      setFortniteShop({
+        allItems: demoItems,
+        daily: demoItems.slice(0, 15),
+        featured: demoItems.slice(15, 30),
+        lastUpdate: new Date().toISOString(),
+        source: 'demo'
+      });
+      return;
+    }
+    
+    setApiKeyStatus('valid');
     
     try {
-      console.log('🔄 Cargando tienda desde API...');
+      console.log('🔄 Cargando tienda desde fnbr.co API...');
       
-      // API PRINCIPAL - fnbr.co
+      // API de fnbr.co con API Key
       const apiUrl = 'https://fnbr.co/api/shop';
       
-      // Intentar con fetch normal
-      let response = await fetch(apiUrl, {
+      const response = await fetch(apiUrl, {
         headers: {
+          'x-api-key': API_KEY,
           'Accept': 'application/json',
           'User-Agent': 'PavosFran/1.0'
         },
+        cache: forceRefresh ? 'no-cache' : 'default'
       });
 
       console.log('📡 Estado de respuesta:', response.status);
       
+      // Extraer información de rate limit de los headers
+      const rateLimit = {
+        limit: parseInt(response.headers.get('X-RateLimit-Limit') || '600'),
+        remaining: parseInt(response.headers.get('X-RateLimit-Remaining') || '599'),
+        reset: parseInt(response.headers.get('X-RateLimit-Reset') || '0')
+      };
+      
+      setRateLimitInfo(rateLimit);
+      
       if (!response.ok) {
-        throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+        if (response.status === 404) {
+          throw new Error('No se encontraron datos de tienda para hoy');
+        } else if (response.status === 429) {
+          throw new Error('Límite de tasa excedido. Intenta más tarde.');
+        } else if (response.status === 401) {
+          throw new Error('API Key inválida o faltante');
+        } else {
+          throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+        }
       }
       
       const data = await response.json();
-      console.log('✅ Datos recibidos correctamente');
+      console.log('✅ Datos de tienda recibidos correctamente');
       
-      // Procesar datos de fnbr.co
-      const processedShop = processFnbrApiData(data);
+      if (data.status !== 200) {
+        throw new Error(`API error: ${data.error || 'Unknown error'}`);
+      }
+      
+      // Procesar datos con la API Key
+      const processedShop = await processFnbrShopData(data, API_KEY);
       setFortniteShop(processedShop);
       setShopError(null);
+      setApiStatus('success');
       
     } catch (error: any) {
       console.error('❌ Error cargando tienda:', error);
       
-      setShopError(
-        currentLanguage === 'es' 
-          ? 'No se pudo cargar la tienda en este momento. Mostrando datos de ejemplo.'
-          : 'Could not load shop at this time. Showing sample data.'
-      );
+      let errorMessage = error.message || t.errorLoadingShop;
+      if (errorMessage.includes('API Key')) {
+        setApiKeyStatus('missing');
+      }
       
-      // Datos de demostración SIN dependencias externas
+      setShopError(errorMessage);
+      setApiStatus('error');
+      
+      // Datos de demostración
       const demoItems = generateDemoFortniteItems();
       setFortniteShop({
         allItems: demoItems,
@@ -849,7 +987,6 @@ const HomePage: React.FC = () => {
       const type = itemTypes[typeIndex];
       const skinName = skinNames[skinIndex];
       
-      // Usar SVG placeholder
       const imageUrl = generateSVGPlaceholder(skinName);
       
       items.push({
@@ -1081,7 +1218,7 @@ const HomePage: React.FC = () => {
     item.rarity.value.toLowerCase() === selectedRarity.toLowerCase()
   ) || [];
 
-  // Obtener rarezas únicas para el filtro
+  // Obtener rarezas únicas para el filtro - CORREGIDO: usando Array.from
   const uniqueRarities = Array.from(
     new Set(fortniteShop?.allItems?.map(item => item.rarity.value.toLowerCase()) || [])
   ).sort();
@@ -1338,7 +1475,7 @@ const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Estado de la API */}
+          {/* Estado de la API y Rate Limit */}
           <div className="api-status">
             <div className="status-indicator">
               <span className={`status-dot ${
@@ -1355,9 +1492,32 @@ const HomePage: React.FC = () => {
               </span>
             </div>
             
+            {/* Información de Rate Limit */}
+            {rateLimitInfo && (
+              <div className="rate-limit-info">
+                <small>
+                  Rate Limit: {rateLimitInfo.remaining}/{rateLimitInfo.limit} requests remaining
+                </small>
+              </div>
+            )}
+            
+            {/* Estado de API Key */}
+            <div className="api-key-status">
+              <span className={`api-key-indicator ${apiKeyStatus}`}>
+                {apiKeyStatus === 'checking' ? '🔍 Verificando API Key...' :
+                 apiKeyStatus === 'valid' ? '✅ API Key válida' :
+                 '❌ ' + t.apiKeyMissing}
+              </span>
+            </div>
+            
             {shopError && (
               <div className="error-details">
                 <p className="error-message">⚠️ {shopError}</p>
+                {apiKeyStatus === 'missing' && (
+                  <p className="api-key-help">
+                    Añade tu API Key a la variable <code>API_KEY</code> en el código o configura un archivo <code>.env.local</code>
+                  </p>
+                )}
               </div>
             )}
 
